@@ -1,0 +1,13 @@
+comments -> unreal "" (thanks jade)
+declare function with args name, age -> real funcName name age {}
+print to console -> bro really said ""
+call a function (eg. main(env)) -> yo main env
+infinite loop -> legends say {some function} still runs
+throw error -> yowtf "Error message"
+semicolon -> 💀 (thanks keita)
+true -> no cap
+false -> cap
+let -> thinks hes
+const -> is
+== -> IS
+

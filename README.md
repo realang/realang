@@ -14,4 +14,5 @@ Realang inspires its syntax from "Male talk". If you are not sure what it is, ju
 
 - [@Aljoberg](https://github.com/aljoberg)
 - [@GoodBoyNeon](https://github.com/goodboyneon)
+- [@JadeBetty](https://github.com/jadebetty)
 - [@Keita](https://github.com/keita-sama)
