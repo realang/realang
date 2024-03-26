@@ -2,7 +2,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "target": "ES2020",
+    "target": "ES2022",
     "allowJs": true,
     "resolveJsonModule": true,
     "moduleDetection": "force",
@@ -13,7 +13,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "lib": [
-      "ES2020"
+      "ES2022"
     ],
     "declaration": true,
     "paths": {
