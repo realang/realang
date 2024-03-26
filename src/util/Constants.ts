@@ -5,6 +5,7 @@ export const TokenTypes = {
 
   Let: "Let",
   Const: "Const",
+  Assignment: "Assignment",
   Function: "Function",
   If: "If",
   Else: "Else",
@@ -13,12 +14,14 @@ export const TokenTypes = {
   Throw: "Throw",
 
   Not: "Not",
-  Equals: "Equals",
+  EqualityCheck: "EqualityCheck",
   Greater: "Greater",
   Less: "Less",
 
-  Quotation: "Quotation",
+  Comma: "Comma",
+  Colon: "Colon",
   Semicolon: "Semicolon",
+  Quotation: "Quotation",
   OpenBrace: "OpenBrace",
   CloseBrace: "CloseBrace",
   OpenBracket: "OpenBracket",
@@ -44,9 +47,12 @@ export type Token = {
 const Keywords: Record<string, TokenType> = {
   if: TokenTypes.If,
   else: TokenTypes.Else,
-  const: TokenTypes.Const,
-  // "thinks hes": TokenTypes.Let,
-  let: TokenTypes.Let,
+  IS: TokenTypes.Const,
+  is: TokenTypes.EqualityCheck,
+  thinks: TokenTypes.Let,
+  hes: TokenTypes.Let,
+  better: TokenTypes.Assignment,
+  be: TokenTypes.Assignment,
   "bro really said": TokenTypes.Print,
   unreal: TokenTypes.Comment,
   yo: TokenTypes.FunctionCall,
@@ -55,8 +61,10 @@ const Keywords: Record<string, TokenType> = {
 } as const;
 
 const Chars: Record<string, TokenType> = {
-  '"': TokenTypes.Quotation,
+  ",": TokenTypes.Comma,
+  ":": TokenTypes.Colon,
   "💀": TokenTypes.Semicolon,
+  '"': TokenTypes.Quotation,
 
   "(": TokenTypes.OpenParenthesis,
   ")": TokenTypes.CloseParenthesis,
@@ -88,11 +96,13 @@ export type NodeType =
   | "Program"
   | "VariableDeclaration"
   | "FunctionDeclaration"
+  | "Property"
+  | "ObjectLiteral"
   | "NumericLiteral"
   | "Identifier"
-  | "BinaryExp"
-  | "CallExp"
-  | "CallExp";
+  | "FunctionCall"
+  | "BinaryExpression"
+  | "VariableAssignmentExpression";
 
 export interface Statement {
   type: NodeType;
@@ -110,13 +120,19 @@ export interface VariableDeclaration extends Statement {
   value?: Expression;
 }
 
-export interface Expression extends Statement { }
+export interface Expression extends Statement {}
 
-export interface BinaryExp extends Expression {
-  type: "BinaryExp";
+export interface BinaryExpression extends Expression {
+  type: "BinaryExpression";
   lhs: Expression;
   rhs: Expression;
   operator: string;
+}
+
+export interface VariableAssignmentExpression extends Expression {
+  type: "VariableAssignmentExpression";
+  assignee: Expression;
+  value: Expression;
 }
 
 export interface Identifier extends Expression {
@@ -129,11 +145,22 @@ export interface NumericLiteral extends Expression {
   value: number;
 }
 
+export interface ObjectLiteral extends Expression {
+  type: "ObjectLiteral";
+  properties: Property[];
+}
+
+export interface Property extends Expression {
+  type: "Property";
+  key: string;
+  value?: Expression;
+}
+
 /***
  * Runtime Values
  */
 
-export type ValueType = "null" | "number" | "boolean" | "string";
+export type ValueType = "null" | "number" | "boolean" | "string" | "object";
 
 export interface RuntimeValue {
   type: ValueType;
@@ -157,4 +184,9 @@ export interface NumberValue extends RuntimeValue {
 export interface StringValue extends RuntimeValue {
   type: "string";
   value: string;
+}
+
+export interface ObjectValue extends RuntimeValue {
+  type: "object";
+  properties: Map<string, RuntimeValue>;
 }

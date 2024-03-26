@@ -1,16 +1,18 @@
 import Lexer from "../lexer";
 import {
-  BinaryExp,
+  BinaryExpression,
   Expression,
   Identifier,
   NumericLiteral,
+  ObjectLiteral,
   Program,
+  Property,
   Statement,
   Token,
   TokenType,
   TokenTypes,
+  VariableAssignmentExpression,
   VariableDeclaration,
-  checkDatatype,
 } from "../util";
 
 export default class Parser {
@@ -18,6 +20,8 @@ export default class Parser {
 
   public createAST(srcString: string): Program {
     this.tokens = new Lexer().tokenize(srcString);
+    // console.log("-------------------- AST --------------------\n", this.tokens);
+    // console.log("\n---------------------------------------------");
 
     const program: Program = {
       type: "Program",
@@ -39,14 +43,16 @@ export default class Parser {
     return this.tokens[0] as Token;
   }
 
-  private eat(): Token {
+  private next(): Token {
+    return this.tokens[1] as Token;
+  }
+
+  private advance(): Token {
     return this.tokens.shift() as Token;
   }
 
   private expect(type: TokenType, err: string) {
-    console.log(this.tokens);
     const prev = this.tokens.shift() as Token;
-    console.log(this.tokens);
     if (!prev || prev.type != type) {
       console.error("[Parser] ", err, prev, " -- Expected: ", type);
       process.exit(1);
@@ -59,16 +65,19 @@ export default class Parser {
    * Additive Expression
    * Multiplication Expression
    * Primary Expression
+   * Assignment Expression
    */
 
   private parseStatement(): Statement {
     switch (this.at().type) {
       // case "Number":
       // case "String":
-      // case "Identifier":
-      case "Let":
-      case "Const":
-        return this.parseVariableDeclaration();
+      case "Identifier":
+        return this.parseIdentifier();
+      // case "Let":
+      // case "Const":
+
+      // return this.parseVariableDeclaration();
       // case "Function":
       // case "If":
       // case "Else":
@@ -95,23 +104,35 @@ export default class Parser {
     }
   }
 
+  private parseIdentifier(): Expression {
+    if (this.next().type == "Const") {
+      return this.parseVariableDeclaration(true);
+    } else if (this.next().type == "Let") {
+      return this.parseVariableDeclaration(false);
+    } else {
+      // console.error("Not implemented yet!");
+      // process.exit(1);
+      return this.parseExpression();
+    }
+  }
+
   private parseExpression(): Expression {
-    return this.parseAdditiveExpression();
+    return this.parseVariableAssignmentExpression();
   }
 
   private parseAdditiveExpression(): Expression {
     let lhs = this.parseMultiplicativeExpression();
 
     while (this.at().value == "+" || this.at().value == "-") {
-      const operator = this.eat().value;
+      const operator = this.advance().value;
       const rhs = this.parseMultiplicativeExpression();
 
       lhs = {
-        type: "BinaryExp",
+        type: "BinaryExpression",
         lhs,
         rhs,
         operator,
-      } as BinaryExp;
+      } as BinaryExpression;
     }
 
     return lhs;
@@ -121,15 +142,15 @@ export default class Parser {
     let lhs = this.parsePrimaryExpression();
 
     while (["*", "/", "%"].includes(this.at().value)) {
-      const operator = this.eat().value;
+      const operator = this.advance().value;
       const rhs = this.parsePrimaryExpression();
 
       lhs = {
-        type: "BinaryExp",
+        type: "BinaryExpression",
         lhs,
         rhs,
         operator,
-      } as BinaryExp;
+      } as BinaryExpression;
     }
 
     return lhs;
@@ -140,16 +161,19 @@ export default class Parser {
 
     switch (token) {
       case "Identifier":
-        return { type: "Identifier", symbol: this.eat().value } as Identifier;
+        return {
+          type: "Identifier",
+          symbol: this.advance().value,
+        } as Identifier;
 
       case "Number":
         return {
           type: "NumericLiteral",
-          value: parseFloat(this.eat().value),
+          value: parseFloat(this.advance().value),
         } as NumericLiteral;
 
       case "OpenParenthesis":
-        this.eat();
+        this.advance();
         const value = this.parseExpression();
         this.expect(
           "CloseParenthesis",
@@ -163,15 +187,14 @@ export default class Parser {
     }
   }
 
-  private parseVariableDeclaration(): Statement {
-    const isConstant = this.eat().type == "Const";
+  private parseVariableDeclaration(isConstant: boolean): Statement {
     const identifier = this.expect(
       "Identifier",
       "Expected identifier name after declaration keyword.",
     ).value;
 
-    if (checkDatatype(this.at().value, "whitespace")) {
-      this.eat();
+    if (this.at().type == "Semicolon") {
+      this.advance();
       if (isConstant) {
         console.error("Expected value when defining a constant expression!");
         process.exit(1);
@@ -185,15 +208,83 @@ export default class Parser {
       return dec;
     }
 
-    this.expect("Equals", "Expected '=' after identifier!");
-
+    this.advance();
+    const value = this.parseExpression();
     const declaration: VariableDeclaration = {
       type: "VariableDeclaration",
-      value: this.parseExpression(),
+      value,
       identifier,
       isConstant,
     };
 
+    this.expect(
+      "Semicolon",
+      "Variable declaration statment must end with '💀'.",
+    );
     return declaration;
+  }
+
+  private parseVariableAssignmentExpression(): Expression {
+    const lhs = this.parseObjectExpression();
+
+    if (this.at().type == "Assignment") {
+      this.advance();
+      const rhs = this.parseVariableAssignmentExpression();
+
+      const exp: VariableAssignmentExpression = {
+        type: "VariableAssignmentExpression",
+        assignee: lhs,
+        value: rhs,
+      };
+      return exp;
+    }
+
+    return lhs;
+  }
+
+  private parseObjectExpression(): Expression {
+    if (this.at().type !== "OpenBrace") {
+      return this.parseAdditiveExpression();
+    }
+
+    this.advance();
+
+    const properties = new Array<Property>();
+
+    while (!this.isEOF() && this.at().type !== "CloseBrace") {
+      const key = this.expect("Identifier", "Expected key for property").value;
+
+      if (this.at().type === "Comma" || this.at().type === "CloseBrace") {
+        if (this.at().type === "Comma") this.advance();
+
+        properties.push({
+          type: "Property",
+          key,
+        });
+        continue;
+      }
+
+      this.expect("Colon", "Expected ':' after key");
+
+      const value = this.parseExpression();
+
+      properties.push({
+        type: "Property",
+        key,
+        value,
+      });
+      if (this.at().type !== "CloseBrace") {
+        this.expect("Comma", "Unexpected end of Object literal");
+      }
+    }
+
+    this.expect("CloseBrace", "Expected Object literal to end");
+
+    const exp: ObjectLiteral = {
+      type: "ObjectLiteral",
+      properties,
+    };
+
+    return exp;
   }
 }

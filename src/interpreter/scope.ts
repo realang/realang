@@ -1,36 +1,56 @@
-import { RuntimeValue } from "../util";
+import { BOOL, NULL, RuntimeValue } from "../util";
+
+export const initGlobalScope = () => {
+  const scope = new Scope();
+
+  scope.declareVariable("cap", BOOL(false), true);
+  scope.declareVariable("null", NULL(), true);
+
+  return scope;
+};
 
 export default class Scope {
   private parent?: Scope;
-  private vars: Map<string, RuntimeValue>;
+  private variables: Map<string, RuntimeValue>;
+  private constants: Set<string>;
 
   constructor(parent?: Scope) {
     this.parent = parent;
-    this.vars = new Map();
+    this.variables = new Map();
+    this.constants = new Set();
   }
 
   public lookupVariable(name: string): RuntimeValue {
-    return this.resolve(name).vars.get(name) as RuntimeValue;
+    return this.resolve(name).variables.get(name) as RuntimeValue;
   }
 
-  public declareVariable(name: string, value: RuntimeValue): RuntimeValue {
-    if (this.vars.has(name)) {
+  public declareVariable(
+    name: string,
+    value: RuntimeValue,
+    isConstant: boolean,
+  ): RuntimeValue {
+    if (this.variables.has(name)) {
       console.error(`'${name}' is already defined!`);
       process.exit(1);
     }
-    this.vars.set(name, value);
+    this.variables.set(name, value);
+    if (isConstant) this.constants.add(name);
     return value;
   }
 
   public assignVariable(name: string, value: RuntimeValue): RuntimeValue {
+    if (this.constants.has(name)) {
+      console.error(`Cannot re-assign constant entity ${name}!`);
+      process.exit(1);
+    }
     const scope = this.resolve(name);
-    scope.vars.set(name, value);
+    scope.variables.set(name, value);
 
     return value;
   }
 
   public resolve(name: string): Scope {
-    if (this.vars.has(name)) return this;
+    if (this.variables.has(name)) return this;
 
     if (this.parent == undefined) {
       console.error(`'${name}' could not be resolved as it does not exist!`);

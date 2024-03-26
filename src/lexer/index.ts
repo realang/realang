@@ -8,12 +8,19 @@ export default class Lexer {
   }
 
   tokenize(srcString: string): Token[] {
-    const src = srcString.split("");
+    const src = srcString.replaceAll("💀", ";").split("");
     while (src.length > 0) {
       if (src[0] == undefined) return [];
       switch (src[0]) {
-        case "=":
-          this.tokens.push(this.createToken(src.shift(), "Equals"));
+        case ",":
+          this.tokens.push(this.createToken(src.shift(), "Comma"));
+          break;
+        case ":":
+          this.tokens.push(this.createToken(src.shift(), "Colon"));
+          break;
+        case ";":
+          this.tokens.push(this.createToken(src.shift(), "Semicolon"));
+          break;
         case "(":
           this.tokens.push(this.createToken(src.shift(), "OpenParenthesis"));
           break;
@@ -60,21 +67,54 @@ export default class Lexer {
             this.tokens.push(this.createToken(num, "Number"));
           } else if (checkDatatype(src[0], "alphabet")) {
             let identifier = "";
-
             while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
               identifier += src.shift();
             }
 
             const reserved = Tokens.Keywords[identifier];
 
-            reserved == undefined
-              ? this.tokens.push(this.createToken(identifier, "Identifier"))
-              : this.tokens.push(this.createToken(identifier, reserved));
-          } else if (checkDatatype(src[0], "whitespace")) {
-            src.shift();
+            if (reserved == undefined) {
+              this.tokens.push(this.createToken(identifier, "Identifier"));
+            } else {
+              if (identifier == "thinks") {
+                identifier += " ";
+                src.shift();
+                while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
+                  identifier += src.shift();
+                }
+                if (identifier.split(" ")[1] !== "hes") {
+                  console.error(
+                    "Incomplete token! Expected 'hes' after 'thinks'",
+                  );
+                  process.exit(1);
+                }
+              } else if (identifier == "hes") {
+                console.error(
+                  "Incomplete token! Expected 'thinks' before 'hes'",
+                );
+                process.exit(1);
+              } else if (identifier == "better") {
+                identifier += " ";
+                src.shift();
+                while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
+                  identifier += src.shift();
+                }
+                if (identifier.split(" ")[1] !== "be") {
+                  console.error(
+                    "Incomplete token! Expected 'be' after 'better'",
+                  );
+                  process.exit(1);
+                }
+              } else if (identifier == "be") {
+                console.error(
+                  "Incomplete token! Expected 'better' before 'be'",
+                );
+                process.exit(1);
+              }
 
-            // check for skull emoji
-          } else if (src[0] == "\ud83d" || src[0] == "\udc80") {
+              this.tokens.push(this.createToken(identifier, reserved));
+            }
+          } else if (checkDatatype(src[0], "whitespace")) {
             src.shift();
           } else {
             console.error("Invalid character" + src[0]);
