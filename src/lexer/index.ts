@@ -12,6 +12,9 @@ export default class Lexer {
     while (src.length > 0) {
       if (src[0] == undefined) return [];
       switch (src[0]) {
+        case ".":
+          this.tokens.push(this.createToken(src.shift(), "Dot"));
+          break;
         case ",":
           this.tokens.push(this.createToken(src.shift(), "Comma"));
           break;
@@ -110,6 +113,21 @@ export default class Lexer {
                   "Incomplete token! Expected 'better' before 'be'",
                 );
                 process.exit(1);
+              } else if (identifier == "bro") {
+                identifier += " ";
+                src.shift();
+                while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
+                  identifier += src.shift();
+                }
+                identifier += " ";
+                src.shift();
+                while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
+                  identifier += src.shift();
+                }
+                if (identifier !== "bro really said") {
+                  console.error("Incomplete print token!");
+                  process.exit(1);
+                }
               }
 
               this.tokens.push(this.createToken(identifier, reserved));

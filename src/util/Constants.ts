@@ -1,3 +1,5 @@
+import Scope from "../interpreter/scope";
+
 export const TokenTypes = {
   Number: "Number",
   String: "String",
@@ -18,6 +20,7 @@ export const TokenTypes = {
   Greater: "Greater",
   Less: "Less",
 
+  Dot: "Dot",
   Comma: "Comma",
   Colon: "Colon",
   Semicolon: "Semicolon",
@@ -49,11 +52,17 @@ const Keywords: Record<string, TokenType> = {
   else: TokenTypes.Else,
   IS: TokenTypes.Const,
   is: TokenTypes.EqualityCheck,
+
   thinks: TokenTypes.Let,
   hes: TokenTypes.Let,
+
   better: TokenTypes.Assignment,
   be: TokenTypes.Assignment,
-  "bro really said": TokenTypes.Print,
+
+  bro: TokenTypes.Print,
+  really: TokenTypes.Print,
+  said: TokenTypes.Print,
+
   unreal: TokenTypes.Comment,
   yo: TokenTypes.FunctionCall,
   real: TokenTypes.Function,
@@ -61,6 +70,7 @@ const Keywords: Record<string, TokenType> = {
 } as const;
 
 const Chars: Record<string, TokenType> = {
+  ".": TokenTypes.Dot,
   ",": TokenTypes.Comma,
   ":": TokenTypes.Colon,
   "💀": TokenTypes.Semicolon,
@@ -100,8 +110,9 @@ export type NodeType =
   | "ObjectLiteral"
   | "NumericLiteral"
   | "Identifier"
-  | "FunctionCall"
   | "BinaryExpression"
+  | "MemberExpression"
+  | "FunctionCallExpression"
   | "VariableAssignmentExpression";
 
 export interface Statement {
@@ -120,6 +131,13 @@ export interface VariableDeclaration extends Statement {
   value?: Expression;
 }
 
+export interface FunctionDeclaration extends Statement {
+  type: "FunctionDeclaration";
+  name: string;
+  params: string[];
+  body: Statement[];
+}
+
 export interface Expression extends Statement {}
 
 export interface BinaryExpression extends Expression {
@@ -127,6 +145,19 @@ export interface BinaryExpression extends Expression {
   lhs: Expression;
   rhs: Expression;
   operator: string;
+}
+
+export interface MemberExpression extends Expression {
+  type: "MemberExpression";
+  object: Expression;
+  property: Expression;
+  computed: boolean;
+}
+
+export interface FunctionCallExpression extends Expression {
+  type: "FunctionCallExpression";
+  args: Expression[];
+  callee: Expression;
 }
 
 export interface VariableAssignmentExpression extends Expression {
@@ -160,7 +191,14 @@ export interface Property extends Expression {
  * Runtime Values
  */
 
-export type ValueType = "null" | "number" | "boolean" | "string" | "object";
+export type ValueType =
+  | "null"
+  | "number"
+  | "boolean"
+  | "string"
+  | "object"
+  | "native"
+  | "function";
 
 export interface RuntimeValue {
   type: ValueType;
@@ -189,4 +227,19 @@ export interface StringValue extends RuntimeValue {
 export interface ObjectValue extends RuntimeValue {
   type: "object";
   properties: Map<string, RuntimeValue>;
+}
+
+export type Function = (args: RuntimeValue[], scope: Scope) => RuntimeValue;
+
+export interface FunctionValue extends RuntimeValue {
+  type: "function";
+  name: string;
+  params: string[];
+  scope: Scope;
+  body: Statement[];
+}
+
+export interface NativeFunctionValue extends RuntimeValue {
+  type: "native";
+  call: Function;
 }

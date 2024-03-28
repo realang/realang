@@ -1,10 +1,12 @@
-z IS 45 💀
-obj thinks hes {
-  x: 69,
-  y: 96,
-  z,
-  mewhen: {
-    something: null
+foo thinks hes 50/2💀
+
+obj IS {
+  x: 100,
+  y: 32,
+  foo: foo,
+  complex: {
+    bar: cap,
   },
 } 💀
 
+yo obj.foo yo bar

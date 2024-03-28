@@ -6,6 +6,7 @@ import Parser from "./parser";
 import readline from "readline";
 
 const parser = new Parser();
+const interpreter = new Interpreter();
 const scope = initGlobalScope();
 
 const repl = async () => {
@@ -28,8 +29,7 @@ const repl = async () => {
 
     const program = parser.createAST(input);
 
-    const res = new Interpreter().eval(program, scope);
-    console.log(res);
+    interpreter.eval(program, scope);
 
     rl.on("close", () => process.exit(0));
   }
@@ -44,8 +44,7 @@ const main = async () => {
   const src = readFileSync(path, "utf-8");
   const program = parser.createAST(src);
 
-  const res = new Interpreter().eval(program, scope);
-  console.log(res);
+  interpreter.eval(program, scope);
 };
 
 main();

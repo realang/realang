@@ -1,7 +1,11 @@
 import {
   BinaryExpression,
+  FunctionCallExpression,
+  FunctionDeclaration,
+  FunctionValue,
   Identifier,
   NULL,
+  NativeFunctionValue,
   NumberValue,
   NumericLiteral,
   ObjectLiteral,
@@ -40,6 +44,18 @@ export default class Interpreter {
 
       case "ObjectLiteral":
         return this.evalObjectExpression(astNode as ObjectLiteral, scope);
+
+      case "FunctionDeclaration":
+        return this.evalFunctionDeclaration(
+          astNode as FunctionDeclaration,
+          scope,
+        );
+
+      case "FunctionCallExpression":
+        return this.evalFunctionCallExpression(
+          astNode as FunctionCallExpression,
+          scope,
+        );
 
       case "BinaryExpression":
         return this.evalBinaryExpression(astNode as BinaryExpression, scope);
@@ -146,5 +162,53 @@ export default class Interpreter {
     }
 
     return object;
+  }
+
+  private evalFunctionDeclaration(
+    decStmt: FunctionDeclaration,
+    scope: Scope,
+  ): RuntimeValue {
+    const { name, params, body } = decStmt;
+    const fn: FunctionValue = {
+      type: "function",
+      name,
+      params,
+      scope,
+      body,
+    };
+
+    return scope.declareVariable(name, fn, true);
+  }
+
+  private evalFunctionCallExpression(
+    exp: FunctionCallExpression,
+    scope: Scope,
+  ): RuntimeValue {
+    const args = exp.args.map((arg) => this.eval(arg, scope));
+    const fn = this.eval(exp.callee, scope);
+    if (fn.type == "native") {
+      const res = (fn as NativeFunctionValue).call(args, scope);
+
+      return res;
+    } else if (fn.type == "function") {
+      const func = fn as FunctionValue;
+      const fnScope = new Scope(func.scope);
+
+      // TODO: verify arity of func
+      func.params.forEach((param, i) => {
+        fnScope.declareVariable(param, args[i] as RuntimeValue, false);
+      });
+
+      let res: RuntimeValue = NULL();
+      func.body.forEach((s) => {
+        res = this.eval(s, fnScope);
+      });
+
+      return res;
+    }
+    console.error(
+      `Attempt to call a non-function value: ${JSON.stringify(fn)}`,
+    );
+    process.exit(1);
   }
 }
