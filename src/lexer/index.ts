@@ -8,7 +8,8 @@ export default class Lexer {
   }
 
   tokenize(srcString: string): Token[] {
-    const src = srcString.replaceAll("💀", ";").split("");
+    const src = srcString.split("");
+    // console.log(src.join(""));
     while (src.length > 0) {
       if (src[0] == undefined) return [];
       switch (src[0]) {
@@ -20,9 +21,6 @@ export default class Lexer {
           break;
         case ":":
           this.tokens.push(this.createToken(src.shift(), "Colon"));
-          break;
-        case ";":
-          this.tokens.push(this.createToken(src.shift(), "Semicolon"));
           break;
         case "(":
           this.tokens.push(this.createToken(src.shift(), "OpenParenthesis"));
@@ -129,7 +127,6 @@ export default class Lexer {
                   process.exit(1);
                 }
               }
-
               this.tokens.push(this.createToken(identifier, reserved));
             }
           } else if (checkDatatype(src[0], "whitespace")) {

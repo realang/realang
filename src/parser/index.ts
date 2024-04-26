@@ -94,7 +94,6 @@ export default class Parser {
       // case "Greater":
       // case "Less":
       // case "Quotation":
-      // case "Semicolon":
       // case "OpenBrace":
       // case "CloseBrace":
       // case "OpenBracket":
@@ -104,6 +103,8 @@ export default class Parser {
       // case "BinaryOperator":
       // case "Comment":
       // case "EOF":
+      case "EOL":
+        this.advance();
       default:
         return this.parseExpression();
     }
@@ -332,6 +333,8 @@ export default class Parser {
   }
 
   private parsePrimaryExpression(): Expression {
+    console.log(this.at());
+
     const token = this.at().type;
 
     switch (token) {
@@ -368,7 +371,7 @@ export default class Parser {
       "Expected identifier name after declaration keyword.",
     ).value;
 
-    if (this.at().type == "Semicolon") {
+    if (this.at().type == "EOL") {
       this.advance();
       if (isConstant) {
         console.error("Expected value when defining a constant expression!");
@@ -392,17 +395,20 @@ export default class Parser {
       isConstant,
     };
 
-    this.expect(
-      "Semicolon",
-      "Variable declaration statment must end with '💀'.",
-    );
+    console.log(this.at());
+
+    this.expect("EOL", "Variable declaration statment must end with 'fr'.");
     return declaration;
   }
 
   private parseArgs(): Expression[] {
-    const args = this.at().type == "Semicolon" ? [] : this.parseArgsList();
+    const args =
+      this.at().type == "FunctionCallEnd" ? [] : this.parseArgsList();
 
-    this.expect("Semicolon", "Missing '💀' after function call expression.");
+    this.expect(
+      "FunctionCallEnd",
+      "Missing 'rn' after function call expression.",
+    );
 
     return args;
   }
@@ -410,20 +416,10 @@ export default class Parser {
   private parseArgsList(): Expression[] {
     const args = [this.parseVariableAssignmentExpression()];
 
-    while (!this.isEOF() && this.at().type != "Semicolon") {
+    while (!this.isEOF() && this.at().type != "FunctionCallEnd") {
       args.push(this.parseVariableAssignmentExpression());
     }
 
     return args;
   }
-
-  // private parsePrint(): Expression {
-  //   if (this.at().type !== "Print")
-  //     return this.parseVariableAssignmentExpression();
-  //   this.advance(); // advace past print token
-  //   const args = this.parseArgs();
-  //   console.log(...args);
-  //   process.exit(1);
-  //   // return {} as Expression;
-  // }
 }

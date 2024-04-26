@@ -23,7 +23,6 @@ export const TokenTypes = {
   Dot: "Dot",
   Comma: "Comma",
   Colon: "Colon",
-  Semicolon: "Semicolon",
   Quotation: "Quotation",
   OpenBrace: "OpenBrace",
   CloseBrace: "CloseBrace",
@@ -37,7 +36,8 @@ export const TokenTypes = {
   Comment: "Comment",
 
   EOF: "EOF",
-  Skull: "Skull",
+  EOL: "EOL",
+  FunctionCallEnd: "FunctionCallEnd",
 } as const;
 
 export type TokenType = (typeof TokenTypes)[keyof typeof TokenTypes];
@@ -52,6 +52,8 @@ const Keywords: Record<string, TokenType> = {
   else: TokenTypes.Else,
   IS: TokenTypes.Const,
   is: TokenTypes.EqualityCheck,
+  rn: TokenTypes.FunctionCallEnd,
+  fr: TokenTypes.EOL,
 
   thinks: TokenTypes.Let,
   hes: TokenTypes.Let,
@@ -73,7 +75,6 @@ const Chars: Record<string, TokenType> = {
   ".": TokenTypes.Dot,
   ",": TokenTypes.Comma,
   ":": TokenTypes.Colon,
-  "💀": TokenTypes.Semicolon,
   '"': TokenTypes.Quotation,
 
   "(": TokenTypes.OpenParenthesis,
