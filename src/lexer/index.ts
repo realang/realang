@@ -9,7 +9,7 @@ export default class Lexer {
 
   tokenize(srcString: string): Token[] {
     const src = srcString.split("");
-    // console.log(src.join(""));
+
     while (src.length > 0) {
       if (src[0] == undefined) return [];
       switch (src[0]) {

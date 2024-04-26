@@ -8,6 +8,7 @@ import {
   MemberExpression,
   NumericLiteral,
   ObjectLiteral,
+  PrintExpression,
   Program,
   Property,
   Statement,
@@ -84,8 +85,8 @@ export default class Parser {
         return this.parseFunctionDeclaration();
       // case "If":
       // case "Else":
-      // case "Print":
-      //   return this.parsePrint();
+      case "Print":
+        return this.parsePrint();
       case "FunctionCall":
         return this.parseCallMemberExpression();
       // case "Throw":
@@ -333,8 +334,6 @@ export default class Parser {
   }
 
   private parsePrimaryExpression(): Expression {
-    console.log(this.at());
-
     const token = this.at().type;
 
     switch (token) {
@@ -395,8 +394,6 @@ export default class Parser {
       isConstant,
     };
 
-    console.log(this.at());
-
     this.expect("EOL", "Variable declaration statment must end with 'fr'.");
     return declaration;
   }
@@ -421,5 +418,18 @@ export default class Parser {
     }
 
     return args;
+  }
+
+  private parsePrint(): Expression {
+    this.advance();
+
+    const args = this.parseArgs();
+
+    const exp: PrintExpression = {
+      type: "PrintExpression",
+      args,
+    };
+
+    return exp;
   }
 }

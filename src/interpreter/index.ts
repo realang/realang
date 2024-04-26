@@ -10,6 +10,7 @@ import {
   NumericLiteral,
   ObjectLiteral,
   ObjectValue,
+  PrintExpression,
   Program,
   RuntimeValue,
   Statement,
@@ -59,6 +60,9 @@ export default class Interpreter {
 
       case "BinaryExpression":
         return this.evalBinaryExpression(astNode as BinaryExpression, scope);
+
+      case "PrintExpression":
+        return this.evalPrintExpression(astNode as PrintExpression, scope);
 
       case "Program":
         return this.evalProgram(astNode as Program, scope);
@@ -210,5 +214,20 @@ export default class Interpreter {
       `Attempt to call a non-function value: ${JSON.stringify(fn)}`,
     );
     process.exit(1);
+  }
+
+  private evalPrintExpression(
+    exp: PrintExpression,
+    scope: Scope,
+  ): RuntimeValue {
+    const args = exp.args
+      .map((arg) => this.eval(arg, scope))
+      .map((a) => {
+        if ("value" in a) return a.value;
+      });
+
+    console.log(...args);
+
+    return NULL();
   }
 }

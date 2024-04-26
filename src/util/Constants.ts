@@ -114,6 +114,7 @@ export type NodeType =
   | "BinaryExpression"
   | "MemberExpression"
   | "FunctionCallExpression"
+  | "PrintExpression"
   | "VariableAssignmentExpression";
 
 export interface Statement {
@@ -165,6 +166,11 @@ export interface VariableAssignmentExpression extends Expression {
   type: "VariableAssignmentExpression";
   assignee: Expression;
   value: Expression;
+}
+
+export interface PrintExpression extends Expression {
+  type: "PrintExpression";
+  args: Expression[];
 }
 
 export interface Identifier extends Expression {

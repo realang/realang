@@ -1,19 +1,10 @@
-import { BOOL, NATIVE_FN, NULL, RuntimeValue } from "../util";
+import { BOOL, NULL, RuntimeValue } from "../util";
 
 export const initGlobalScope = () => {
   const scope = new Scope();
 
   scope.declareVariable("cap", BOOL(false), true);
   scope.declareVariable("null", NULL(), true);
-
-  scope.declareVariable(
-    "echo",
-    NATIVE_FN((args) => {
-      console.log(...args);
-      return NULL();
-    }),
-    true,
-  );
 
   return scope;
 };
