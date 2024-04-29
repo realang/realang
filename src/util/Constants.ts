@@ -1,9 +1,12 @@
 import Scope from "../interpreter/scope";
 
 export const TokenTypes = {
+  /* Datatypes */
   Number: "Number",
   String: "String",
   Identifier: "Identifier",
+
+  /* Reserved Keywords */
 
   Let: "Let",
   Const: "Const",
@@ -16,6 +19,7 @@ export const TokenTypes = {
   Throw: "Throw",
 
   Not: "Not",
+
   EqualityCheck: "EqualityCheck",
   Greater: "Greater",
   Less: "Less",
@@ -43,15 +47,14 @@ export const TokenTypes = {
 export type TokenType = (typeof TokenTypes)[keyof typeof TokenTypes];
 
 export type Token = {
-  value: string;
   type: TokenType;
+  value: string;
 };
 
 const Keywords: Record<string, TokenType> = {
   if: TokenTypes.If,
   else: TokenTypes.Else,
-  IS: TokenTypes.Const,
-  is: TokenTypes.EqualityCheck,
+  is: TokenTypes.Const,
   rn: TokenTypes.FunctionCallEnd,
   fr: TokenTypes.EOL,
 
@@ -92,6 +95,7 @@ const Chars: Record<string, TokenType> = {
 
   "<": TokenTypes.Less,
   ">": TokenTypes.Greater,
+  "=": TokenTypes.EqualityCheck,
 } as const;
 
 export const Tokens = {
@@ -115,6 +119,7 @@ export type NodeType =
   | "MemberExpression"
   | "FunctionCallExpression"
   | "PrintExpression"
+  | "IfCondition"
   | "VariableAssignmentExpression";
 
 export interface Statement {
@@ -138,6 +143,13 @@ export interface FunctionDeclaration extends Statement {
   name: string;
   params: string[];
   body: Statement[];
+}
+
+export interface IfStatement extends Statement {
+  type: "IfCondition";
+  condition?: Expression;
+  body: Statement[];
+  orElse?: IfStatement;
 }
 
 export interface Expression extends Statement {}
@@ -205,6 +217,7 @@ export type ValueType =
   | "string"
   | "object"
   | "native"
+  | "if"
   | "function";
 
 export interface RuntimeValue {
@@ -234,6 +247,13 @@ export interface StringValue extends RuntimeValue {
 export interface ObjectValue extends RuntimeValue {
   type: "object";
   properties: Map<string, RuntimeValue>;
+}
+
+export interface IfConditionValue extends RuntimeValue {
+  type: "if";
+  condition: Expression;
+  body: Statement[];
+  orElse?: IfConditionValue;
 }
 
 export type Function = (args: RuntimeValue[], scope: Scope) => RuntimeValue;

@@ -4,6 +4,7 @@ import {
   FunctionDeclaration,
   FunctionValue,
   Identifier,
+  IfStatement,
   NULL,
   NativeFunctionValue,
   NumberValue,
@@ -63,6 +64,9 @@ export default class Interpreter {
 
       case "PrintExpression":
         return this.evalPrintExpression(astNode as PrintExpression, scope);
+
+      case "IfCondition":
+        return this.evalIfStatement(astNode as IfStatement, scope);
 
       case "Program":
         return this.evalProgram(astNode as Program, scope);
@@ -227,6 +231,11 @@ export default class Interpreter {
       });
 
     console.log(...args);
+
+    return NULL();
+  }
+  private evalIfStatement(exp: IfStatement, scope: Scope): RuntimeValue {
+    console.log(exp);
 
     return NULL();
   }

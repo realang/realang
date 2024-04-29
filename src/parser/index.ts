@@ -5,6 +5,7 @@ import {
   FunctionCallExpression,
   FunctionDeclaration,
   Identifier,
+  IfStatement,
   MemberExpression,
   NumericLiteral,
   ObjectLiteral,
@@ -24,8 +25,8 @@ export default class Parser {
 
   public createAST(srcString: string): Program {
     this.tokens = new Lexer().tokenize(srcString);
-    // console.log("-------------------- AST --------------------\n", this.tokens);
-    // console.log("\n---------------------------------------------");
+    console.log("-------------------- AST --------------------\n", this.tokens);
+    console.log("\n---------------------------------------------");
 
     const program: Program = {
       type: "Program",
@@ -83,8 +84,11 @@ export default class Parser {
         return this.parseIdentifier();
       case "Function":
         return this.parseFunctionDeclaration();
-      // case "If":
-      // case "Else":
+      case "If":
+        return this.ParseIfStatement();
+      case "Else":
+        console.error("Expected if condition before else");
+        process.exit(1);
       case "Print":
         return this.parsePrint();
       case "FunctionCall":
@@ -129,14 +133,7 @@ export default class Parser {
 
     const params = args.map((arg) => (arg as Identifier).symbol);
 
-    this.expect("OpenBrace", "Expected '{' after function declaration");
-
-    const body: Statement[] = [];
-
-    while (!this.isEOF() && this.at().type != TokenTypes.CloseBrace) {
-      body.push(this.parseStatement());
-    }
-    this.expect("CloseBrace", "Expected function body to close");
+    const body = this.parseCodeBlock();
 
     const fn: FunctionDeclaration = {
       type: "FunctionDeclaration",
@@ -146,6 +143,19 @@ export default class Parser {
     };
 
     return fn;
+  }
+
+  private parseCodeBlock() {
+    this.expect("OpenBrace", "Expected '{' to start codeblock");
+
+    const body: Statement[] = [];
+
+    while (!this.isEOF() && this.at().type != TokenTypes.CloseBrace) {
+      body.push(this.parseStatement());
+    }
+    this.expect("CloseBrace", "Expected codeblock body to close");
+
+    return body;
   }
 
   private parseIdentifier(): Expression {
@@ -428,6 +438,32 @@ export default class Parser {
     const exp: PrintExpression = {
       type: "PrintExpression",
       args,
+    };
+
+    return exp;
+  }
+
+  private ParseIfStatement(): IfStatement {
+    this.advance();
+    this.expect("OpenParenthesis", "Expected ( after if");
+
+    const condition = this.parseExpression();
+
+    this.expect("CloseParenthesis", "Expected ) after condition");
+
+    const body = this.parseCodeBlock();
+
+    let orElse: IfStatement | undefined = undefined;
+
+    if (this.at().type === "Else") {
+      orElse = this.ParseIfStatement();
+    }
+
+    const exp: IfStatement = {
+      type: "IfCondition",
+      condition,
+      body,
+      orElse,
     };
 
     return exp;
