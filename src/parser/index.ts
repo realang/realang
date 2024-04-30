@@ -24,11 +24,14 @@ export default class Parser {
   private tokens = new Array<Token>();
 
   public createAST(srcString: string): Program {
-    this.tokens = new Lexer(srcString).tokenize();
+    const lexer = new Lexer(srcString);
+
+    this.tokens = lexer.tokenize();
+
     console.log("-------------------- AST --------------------\n", this.tokens);
     console.log("\n---------------------------------------------");
 
-    return {} as Program;
+    // return {} as Program;
     const program: Program = {
       type: "Program",
       body: [],

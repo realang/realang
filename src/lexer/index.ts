@@ -1,15 +1,24 @@
 import { Token, TokenType, raise } from "../util";
-import { handleDefault, handleWhitespace } from "./handlers";
+import {
+  handleComment,
+  handleDefault,
+  handleNumber,
+  handleString,
+  handleWhitespace,
+} from "./handlers";
 
 export const lexerPatterns: LexerPattern[] = [
+  { regex: /[0-9]+(\.[0-9]+)?/, handler: handleNumber },
+  { regex: /"[^"]*"/, handler: handleString },
   { regex: /\s+/, handler: handleWhitespace },
+  { regex: /(?<=^|\s)unreal .*?(?=\n|$)/, handler: handleComment },
 
   { regex: /\./, handler: handleDefault("Dot", ".") },
   { regex: /,/, handler: handleDefault("Comma", ",") },
   { regex: /:/, handler: handleDefault("Colon", ":") },
 
-  { regex: /'/, handler: handleDefault("Quotation", "'") },
   { regex: /"/, handler: handleDefault("Quotation", '"') },
+  { regex: /'/, handler: handleDefault("Quotation", "'") },
 
   { regex: /\(/, handler: handleDefault("OpenParenthesis", "(") },
   { regex: /\)/, handler: handleDefault("CloseParenthesis", ")") },
@@ -64,19 +73,7 @@ export class Lexer implements ILexer {
     };
   }
 
-  private createToken(value: string = "", type: TokenType): Token {
-    return { value, type };
-  }
-
-  public advancePos(n: number) {
-    this.trace.pos += n;
-  }
-
-  public srcAfterPos() {
-    return this.source.slice(this.trace.pos);
-  }
-
-  tokenize(): Array<Token> {
+  public tokenize(): Array<Token> {
     while (!this.eof()) {
       let realToken = false;
 
@@ -98,6 +95,14 @@ export class Lexer implements ILexer {
 
     this.tokens.push({ type: "EOF", value: "EOF" });
     return this.tokens;
+  }
+
+  public advancePos(n: number) {
+    this.trace.pos += n;
+  }
+
+  public srcAfterPos() {
+    return this.source.slice(this.trace.pos);
   }
 
   private eof() {
