@@ -1,145 +1,106 @@
-import { Token, TokenType, Tokens, checkDatatype } from "../util";
+import { Token, TokenType, raise } from "../util";
+import { handleDefault, handleWhitespace } from "./handlers";
 
-export default class Lexer {
-  private tokens = new Array<Token>();
+export const lexerPatterns: LexerPattern[] = [
+  { regex: /\s+/, handler: handleWhitespace },
+
+  { regex: /\./, handler: handleDefault("Dot", ".") },
+  { regex: /,/, handler: handleDefault("Comma", ",") },
+  { regex: /:/, handler: handleDefault("Colon", ":") },
+
+  { regex: /'/, handler: handleDefault("Quotation", "'") },
+  { regex: /"/, handler: handleDefault("Quotation", '"') },
+
+  { regex: /\(/, handler: handleDefault("OpenParenthesis", "(") },
+  { regex: /\)/, handler: handleDefault("CloseParenthesis", ")") },
+  { regex: /{/, handler: handleDefault("OpenBrace", "{") },
+  { regex: /}/, handler: handleDefault("CloseBrace", "}") },
+  { regex: /\[/, handler: handleDefault("OpenBracket", "[") },
+  { regex: /\]/, handler: handleDefault("CloseBracket", "]") },
+
+  { regex: /\+/, handler: handleDefault("Plus", "+") },
+  { regex: /-/, handler: handleDefault("Minus", "-") },
+  { regex: /\*/, handler: handleDefault("Multiply", "*") },
+  { regex: /\//, handler: handleDefault("Divide", "/") },
+  { regex: /%/, handler: handleDefault("Modular", "%") },
+];
+
+type LexerTrace = {
+  line: number;
+  pos: number;
+};
+
+type LexerPattern = {
+  regex: RegExp;
+  handler: (lex: Lexer, regex: RegExp) => void;
+};
+
+export interface ILexer {
+  trace: LexerTrace;
+  source: string;
+  tokens: Array<Token>;
+  patterns: Array<LexerPattern>;
+}
+
+export class Lexer implements ILexer {
+  trace: LexerTrace;
+
+  source: string;
+
+  tokens: Array<Token>;
+
+  patterns: Array<LexerPattern>;
+
+  public constructor(source: string) {
+    this.source = source;
+
+    this.patterns = lexerPatterns;
+
+    this.tokens = new Array<Token>();
+
+    this.trace = {
+      pos: 0,
+      line: 1,
+    };
+  }
 
   private createToken(value: string = "", type: TokenType): Token {
     return { value, type };
   }
 
-  tokenize(srcString: string): Token[] {
-    const src = srcString.split("");
+  public advancePos(n: number) {
+    this.trace.pos += n;
+  }
 
-    while (src.length > 0) {
-      if (src[0] == undefined) return [];
-      switch (src[0]) {
-        case ".":
-          this.tokens.push(this.createToken(src.shift(), "Dot"));
-          break;
-        case ",":
-          this.tokens.push(this.createToken(src.shift(), "Comma"));
-          break;
-        case ":":
-          this.tokens.push(this.createToken(src.shift(), "Colon"));
-          break;
-        case "(":
-          this.tokens.push(this.createToken(src.shift(), "OpenParenthesis"));
-          break;
-        case ")":
-          this.tokens.push(this.createToken(src.shift(), "CloseParenthesis"));
-          break;
+  public srcAfterPos() {
+    return this.source.slice(this.trace.pos);
+  }
 
-        case "{":
-          this.tokens.push(this.createToken(src.shift(), "OpenBrace"));
-          break;
-        case "}":
-          this.tokens.push(this.createToken(src.shift(), "CloseBrace"));
-          break;
+  tokenize(): Array<Token> {
+    while (!this.eof()) {
+      let realToken = false;
 
-        case "[":
-          this.tokens.push(this.createToken(src.shift(), "OpenBracket"));
-          break;
-        case "]":
-          this.tokens.push(this.createToken(src.shift(), "CloseBracket"));
-          break;
+      for (const { regex, handler } of this.patterns) {
+        const loc = regex.exec(this.srcAfterPos())?.index;
 
-        case '"':
-          this.tokens.push(this.createToken(src.shift(), "Quotation"));
+        if (loc === 0) {
+          handler(this, regex);
+          realToken = true;
           break;
-        case "'":
-          this.tokens.push(this.createToken(src.shift(), "Quotation"));
-          break;
-
-        case "+":
-        case "-":
-        case "*":
-        case "/":
-        case "%":
-          this.tokens.push(this.createToken(src.shift(), "BinaryOperator"));
-          break;
-
-        default:
-          if (checkDatatype(src[0], "integer")) {
-            let num = "";
-            while (src.length > 0 && checkDatatype(src[0], "integer")) {
-              num += src.shift();
-            }
-
-            this.tokens.push(this.createToken(num, "Number"));
-          } else if (checkDatatype(src[0], "alphabet")) {
-            let identifier = "";
-            while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
-              identifier += src.shift();
-            }
-
-            const reserved = Tokens.Keywords[identifier];
-
-            if (reserved == undefined) {
-              this.tokens.push(this.createToken(identifier, "Identifier"));
-            } else {
-              if (identifier == "thinks") {
-                identifier += " ";
-                src.shift();
-                while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
-                  identifier += src.shift();
-                }
-                if (identifier.split(" ")[1] !== "hes") {
-                  console.error(
-                    "Incomplete token! Expected 'hes' after 'thinks'",
-                  );
-                  process.exit(1);
-                }
-              } else if (identifier == "hes") {
-                console.error(
-                  "Incomplete token! Expected 'thinks' before 'hes'",
-                );
-                process.exit(1);
-              } else if (identifier == "better") {
-                identifier += " ";
-                src.shift();
-                while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
-                  identifier += src.shift();
-                }
-                if (identifier.split(" ")[1] !== "be") {
-                  console.error(
-                    "Incomplete token! Expected 'be' after 'better'",
-                  );
-                  process.exit(1);
-                }
-              } else if (identifier == "be") {
-                console.error(
-                  "Incomplete token! Expected 'better' before 'be'",
-                );
-                process.exit(1);
-              } else if (identifier == "bro") {
-                identifier += " ";
-                src.shift();
-                while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
-                  identifier += src.shift();
-                }
-                identifier += " ";
-                src.shift();
-                while (src.length > 0 && checkDatatype(src[0], "alphabet")) {
-                  identifier += src.shift();
-                }
-                if (identifier !== "bro really said") {
-                  console.error("Incomplete print token!");
-                  process.exit(1);
-                }
-              }
-              this.tokens.push(this.createToken(identifier, reserved));
-            }
-          } else if (checkDatatype(src[0], "whitespace")) {
-            src.shift();
-          } else {
-            console.error("Invalid character" + src[0]);
-            process.exit(1);
-          }
-          break;
+        }
       }
+
+      if (!realToken)
+        raise(
+          `:: Lexer Error -> Unrecognized token at ${this.trace.line}:${this.trace.pos} => ${this.srcAfterPos()}`,
+        );
     }
 
-    this.tokens.push(this.createToken("EndOfFile", "EOF"));
+    this.tokens.push({ type: "EOF", value: "EOF" });
     return this.tokens;
+  }
+
+  private eof() {
+    return this.trace.pos >= this.source.length;
   }
 }

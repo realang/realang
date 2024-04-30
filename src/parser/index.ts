@@ -1,4 +1,4 @@
-import Lexer from "../lexer";
+import { Lexer } from "../lexer";
 import {
   BinaryExpression,
   Expression,
@@ -24,10 +24,11 @@ export default class Parser {
   private tokens = new Array<Token>();
 
   public createAST(srcString: string): Program {
-    this.tokens = new Lexer().tokenize(srcString);
+    this.tokens = new Lexer(srcString).tokenize();
     console.log("-------------------- AST --------------------\n", this.tokens);
     console.log("\n---------------------------------------------");
 
+    return {} as Program;
     const program: Program = {
       type: "Program",
       body: [],

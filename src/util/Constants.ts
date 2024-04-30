@@ -35,7 +35,11 @@ export const TokenTypes = {
   OpenParenthesis: "OpenParenthesis",
   CloseParenthesis: "CloseParenthesis",
 
-  BinaryOperator: "BinaryOperator",
+  Plus: "Plus",
+  Minus: "Minus",
+  Multiply: "Multiply",
+  Divide: "Divide",
+  Modular: "Modular",
 
   Comment: "Comment",
 
