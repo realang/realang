@@ -15,13 +15,6 @@ import {
   nudLookup,
 } from "./lookups";
 
-/**
- *
- * -> Order of Presidence <-
- *
- *
- */
-
 export const parseExpression = (
   parser: Parser,
   bp: BindingPower,

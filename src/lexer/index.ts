@@ -1,4 +1,5 @@
-import { Token, raise } from "../util";
+import { Token } from "../types";
+import { raise } from "../util";
 import { LexerPattern, patterns as lexerPatterns } from "./patterns";
 
 export type Trace = {

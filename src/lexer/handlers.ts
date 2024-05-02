@@ -1,5 +1,6 @@
 import { Lexer } from ".";
-import { Keywords, TokenType } from "../util";
+import { Keywords } from "../lib/tokens";
+import { TokenType } from "../types";
 
 export const handleDefault = (type: TokenType, value: string) => {
   const func = (lex: Lexer) => {

@@ -4,7 +4,7 @@ import {
   NativeFunctionValue,
   NullValue,
   NumberValue,
-} from ".";
+} from "../types";
 
 export const NUM = (n = 0) => ({ type: "number", value: n }) as NumberValue;
 

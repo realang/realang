@@ -1,5 +1,6 @@
 import { Trace } from "../lexer";
-import { BlockStatement, Statement, Token, TokenType, raise } from "../util";
+import { BlockStatement, Statement, Token, TokenType } from "../types";
+import { raise } from "../util";
 import { createLookups } from "./lookups";
 import { parseStatement } from "./statement";
 
@@ -33,8 +34,20 @@ export class Parser implements IParser {
     return blockStatement;
   }
 
+  public getTokenAt(n: number): Token {
+    return this.tokens.at(this.trace.pos + n) as Token;
+  }
+
+  public get prevToken(): Token {
+    return this.tokens.at(this.trace.pos + 1) as Token;
+  }
+
   public get currentToken(): Token {
     return this.tokens.at(this.trace.pos) as Token;
+  }
+
+  public get nextToken(): Token {
+    return this.tokens.at(this.trace.pos + 1) as Token;
   }
 
   public get hasTokens(): boolean {
@@ -46,6 +59,12 @@ export class Parser implements IParser {
   public advance() {
     const token = this.currentToken;
     this.trace.pos++;
+    return token;
+  }
+
+  public recede() {
+    const token = this.currentToken;
+    this.trace.pos--;
     return token;
   }
 

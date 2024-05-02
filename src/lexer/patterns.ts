@@ -14,11 +14,29 @@ export type LexerPattern = {
 };
 
 export const patterns: LexerPattern[] = [
+  { regex: /(?<=^|\s)unreal .*?(?=\n|$)/, handler: handleComment },
+
+  // Multi-line characters
+
+  {
+    regex: /thinks hes/,
+    handler: (lex, regex) => {
+      const match = regex.exec(lex.srcAfterPos());
+      const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
+
+      lex.tokens.push({
+        type: "Let",
+        value,
+      });
+
+      lex.advancePos(value.length);
+    },
+  },
+
   { regex: /[0-9]+(\.[0-9]+)?/, handler: handleNumber },
   { regex: /[a-zA-Z_][a-zA-Z0-9_]*/, handler: handleSymbol },
   { regex: /"[^"]*"/, handler: handleString },
   { regex: /\s+/, handler: handleWhitespace },
-  { regex: /(?<=^|\s)unreal .*?(?=\n|$)/, handler: handleComment },
 
   { regex: /\./, handler: handleDefault("Dot", ".") },
   { regex: /,/, handler: handleDefault("Comma", ",") },

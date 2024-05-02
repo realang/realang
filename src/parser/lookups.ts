@@ -1,6 +1,7 @@
 import { Parser } from ".";
-import { Expression, Statement, TokenType } from "../util";
+import { Expression, Statement, TokenType } from "../types";
 import { parseBinaryExpression, parsePrimaryExpression } from "./expression";
+import { parseVariableDeclarationStatement } from "./statement";
 
 export const BindingPowerTable = {
   default: 0,
@@ -38,7 +39,7 @@ export const led = (type: TokenType, bp: BindingPower, handler: LedHandler) => {
 };
 
 export const nud = (type: TokenType, bp: BindingPower, handler: NudHandler) => {
-  bpLookup.set(type, BindingPowerTable.primary);
+  bpLookup.set(type, bp);
   nudLookup.set(type, handler);
 };
 
@@ -48,6 +49,11 @@ export const statement = (type: TokenType, handler: StatementHandler) => {
 };
 
 export const createLookups = () => {
+  // --> Statements <--
+  statement("Let", parseVariableDeclarationStatement);
+  statement("Const", parseVariableDeclarationStatement);
+
+  // --> LED & NUD <--
   // -> 3
   led("And", BindingPowerTable.logical, parseBinaryExpression);
   led("Or", BindingPowerTable.logical, parseBinaryExpression);

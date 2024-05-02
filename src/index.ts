@@ -1,6 +1,5 @@
 import { readFileSync } from "fs";
-import Interpreter from "./interpreter";
-import { initGlobalScope } from "./interpreter/scope";
+import util from "util";
 import { Parser } from "./parser";
 
 import readline from "readline";
@@ -30,10 +29,9 @@ const repl = async () => {
     const parser = new Parser(tokens);
     const ast = parser.parse();
 
-    const interpreter = new Interpreter();
-    const scope = initGlobalScope();
-
-    interpreter.eval(ast, scope);
+    console.log(
+      util.inspect(ast, { showHidden: false, depth: null, colors: true }),
+    );
 
     rl.on("close", () => process.exit(0));
   }
@@ -52,14 +50,10 @@ const main = async () => {
 
   const parser = new Parser(tokens);
   const ast = parser.parse();
-
-  console.log(ast);
+  console.log(
+    util.inspect(ast, { showHidden: false, depth: null, colors: true }),
+  );
   return;
-
-  const interpreter = new Interpreter();
-  const scope = initGlobalScope();
-
-  // interpreter.eval(ast, scope);
 };
 
 main();
