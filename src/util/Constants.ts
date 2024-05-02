@@ -18,12 +18,6 @@ export const TokenTypes = {
   FunctionCall: "FunctionCall",
   Throw: "Throw",
 
-  Not: "Not",
-
-  EqualityCheck: "EqualityCheck",
-  Greater: "Greater",
-  Less: "Less",
-
   Dot: "Dot",
   Comma: "Comma",
   Colon: "Colon",
@@ -41,6 +35,16 @@ export const TokenTypes = {
   Divide: "Divide",
   Modular: "Modular",
 
+  Equals: "Equals",
+  Greater: "Greater",
+  GreaterEquals: "GreaterEquals",
+  Less: "Less",
+  LessEquals: "LessEquals",
+
+  And: "And",
+  Or: "Or",
+  Not: "Not",
+
   Comment: "Comment",
 
   EOF: "EOF",
@@ -55,12 +59,15 @@ export type Token = {
   value: string;
 };
 
-const Keywords: Record<string, TokenType> = {
+export const Keywords = {
   if: TokenTypes.If,
   else: TokenTypes.Else,
   is: TokenTypes.Const,
   rn: TokenTypes.FunctionCallEnd,
   fr: TokenTypes.EOL,
+  and: TokenTypes.And,
+  or: TokenTypes.Or,
+  no: TokenTypes.Not,
 
   thinks: TokenTypes.Let,
   hes: TokenTypes.Let,
@@ -78,7 +85,7 @@ const Keywords: Record<string, TokenType> = {
   yowtf: TokenTypes.Throw,
 } as const;
 
-const Chars: Record<string, TokenType> = {
+const Chars = {
   ".": TokenTypes.Dot,
   ",": TokenTypes.Comma,
   ":": TokenTypes.Colon,
@@ -91,15 +98,17 @@ const Chars: Record<string, TokenType> = {
   "[": TokenTypes.OpenBracket,
   "]": TokenTypes.CloseBracket,
 
-  "+": TokenTypes.BinaryOperator,
-  "-": TokenTypes.BinaryOperator,
-  "*": TokenTypes.BinaryOperator,
-  "/": TokenTypes.BinaryOperator,
-  "%": TokenTypes.BinaryOperator,
+  "+": TokenTypes.Plus,
+  "-": TokenTypes.Minus,
+  "*": TokenTypes.Multiply,
+  "/": TokenTypes.Divide,
+  "%": TokenTypes.Modular,
 
   "<": TokenTypes.Less,
+  "<=": TokenTypes.LessEquals,
   ">": TokenTypes.Greater,
-  "=": TokenTypes.EqualityCheck,
+  ">=": TokenTypes.GreaterEquals,
+  "=": TokenTypes.Equals,
 } as const;
 
 export const Tokens = {
@@ -118,7 +127,11 @@ export type NodeType =
   | "Property"
   | "ObjectLiteral"
   | "NumericLiteral"
+  | "StringLiteral"
   | "Identifier"
+  | "Symbol"
+  | "Block"
+  | "Expression"
   | "BinaryExpression"
   | "MemberExpression"
   | "FunctionCallExpression"
@@ -130,8 +143,18 @@ export interface Statement {
   type: NodeType;
 }
 
+export interface ExpressionStatement extends Statement {
+  type: "Expression";
+  expression: Expression;
+}
+
 export interface Program extends Statement {
   type: "Program";
+  body: Statement[];
+}
+
+export interface BlockStatement extends Statement {
+  type: "Block";
   body: Statement[];
 }
 
@@ -158,11 +181,27 @@ export interface IfStatement extends Statement {
 
 export interface Expression extends Statement {}
 
+// --> Literal Expressions <--
+export interface NumericLiteral extends Expression {
+  type: "NumericLiteral";
+  value: number;
+}
+
+export interface ObjectLiteral extends Expression {
+  type: "ObjectLiteral";
+  value: Property[];
+}
+
+export interface StringLiteral extends Expression {
+  type: "StringLiteral";
+  value: string;
+}
+
 export interface BinaryExpression extends Expression {
   type: "BinaryExpression";
   lhs: Expression;
   rhs: Expression;
-  operator: string;
+  operator: Token;
 }
 
 export interface MemberExpression extends Expression {
@@ -191,17 +230,7 @@ export interface PrintExpression extends Expression {
 
 export interface Identifier extends Expression {
   type: "Identifier";
-  symbol: string;
-}
-
-export interface NumericLiteral extends Expression {
-  type: "NumericLiteral";
-  value: number;
-}
-
-export interface ObjectLiteral extends Expression {
-  type: "ObjectLiteral";
-  properties: Property[];
+  value: string;
 }
 
 export interface Property extends Expression {

@@ -1,5 +1,5 @@
 import { Lexer } from ".";
-import { TokenType } from "../util";
+import { Keywords, TokenType } from "../util";
 
 export const handleDefault = (type: TokenType, value: string) => {
   const func = (lex: Lexer) => {
@@ -27,12 +27,30 @@ export const handleNumber = (lex: Lexer, regex: RegExp) => {
   lex.advancePos(value?.length);
 };
 
-export const handleString = (lex: Lexer, regex: RegExp) => {
+export const handleSymbol = (lex: Lexer, regex: RegExp) => {
   const match = regex.exec(lex.srcAfterPos());
   const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
-  lex.tokens.push({ type: "String", value });
+  if (Object.keys(Keywords).includes(value)) {
+    lex.tokens.push({
+      type: Keywords[value as keyof typeof Keywords] as TokenType,
+      value,
+    });
+  } else {
+    lex.tokens.push({ type: "Identifier", value });
+  }
+
   lex.advancePos(value.length);
+};
+
+export const handleString = (lex: Lexer, regex: RegExp) => {
+  const match = regex.exec(lex.srcAfterPos());
+  const value = lex
+    .srcAfterPos()
+    .slice(match?.index! + 1, match?.at(0)?.length! - 1);
+
+  lex.tokens.push({ type: "String", value });
+  lex.advancePos(value.length + 2);
 };
 
 export const handleComment = (lex: Lexer, regex: RegExp) => {

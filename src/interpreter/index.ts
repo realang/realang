@@ -235,8 +235,6 @@ export default class Interpreter {
     return NULL();
   }
   private evalIfStatement(exp: IfStatement, scope: Scope): RuntimeValue {
-    console.log(exp);
-
     return NULL();
   }
 }

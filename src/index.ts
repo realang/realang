@@ -1,13 +1,10 @@
 import { readFileSync } from "fs";
 import Interpreter from "./interpreter";
 import { initGlobalScope } from "./interpreter/scope";
-import Parser from "./parser";
+import { Parser } from "./parser";
 
 import readline from "readline";
-
-const parser = new Parser();
-const interpreter = new Interpreter();
-const scope = initGlobalScope();
+import { Lexer } from "./lexer";
 
 const repl = async () => {
   console.log("\nReal Repl (v0.0.1)");
@@ -27,9 +24,16 @@ const repl = async () => {
       process.exit(0);
     }
 
-    const program = parser.createAST(input);
+    const lexer = new Lexer(input);
+    const tokens = lexer.tokenize();
 
-    interpreter.eval(program, scope);
+    const parser = new Parser(tokens);
+    const ast = parser.parse();
+
+    const interpreter = new Interpreter();
+    const scope = initGlobalScope();
+
+    interpreter.eval(ast, scope);
 
     rl.on("close", () => process.exit(0));
   }
@@ -42,9 +46,20 @@ const main = async () => {
     return;
   }
   const src = readFileSync(path, "utf-8");
-  const program = parser.createAST(src);
 
-  interpreter.eval(program, scope);
+  const lexer = new Lexer(src);
+  const tokens = lexer.tokenize();
+
+  const parser = new Parser(tokens);
+  const ast = parser.parse();
+
+  console.log(ast);
+  return;
+
+  const interpreter = new Interpreter();
+  const scope = initGlobalScope();
+
+  // interpreter.eval(ast, scope);
 };
 
 main();

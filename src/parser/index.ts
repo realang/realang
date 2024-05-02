@@ -1,475 +1,501 @@
-import { Lexer } from "../lexer";
-import {
-  BinaryExpression,
-  Expression,
-  FunctionCallExpression,
-  FunctionDeclaration,
-  Identifier,
-  IfStatement,
-  MemberExpression,
-  NumericLiteral,
-  ObjectLiteral,
-  PrintExpression,
-  Program,
-  Property,
-  Statement,
-  Token,
-  TokenType,
-  TokenTypes,
-  VariableAssignmentExpression,
-  VariableDeclaration,
-} from "../util";
+import { Trace } from "../lexer";
+import { BlockStatement, Statement, Token, TokenType, raise } from "../util";
+import { createLookups } from "./lookups";
+import { parseStatement } from "./statement";
 
-export default class Parser {
-  private tokens = new Array<Token>();
+export interface IParser {
+  tokens: Array<Token>;
+  trace: Trace;
+}
 
-  public createAST(srcString: string): Program {
-    const lexer = new Lexer(srcString);
+export class Parser implements IParser {
+  tokens: Array<Token>;
 
-    this.tokens = lexer.tokenize();
+  trace: Trace;
 
-    console.log("-------------------- AST --------------------\n", this.tokens);
-    console.log("\n---------------------------------------------");
+  public constructor(tokens: Array<Token>) {
+    createLookups();
 
-    // return {} as Program;
-    const program: Program = {
-      type: "Program",
-      body: [],
-    };
+    this.tokens = tokens;
 
-    while (!this.isEOF()) {
-      program.body.push(this.parseStatement());
+    this.trace = { pos: 0, line: 1 };
+  }
+
+  public parse() {
+    let body = new Array<Statement>();
+
+    while (this.hasTokens) {
+      body.push(parseStatement(this));
     }
 
-    return program;
+    const blockStatement: BlockStatement = { type: "Block", body };
+
+    return blockStatement;
   }
 
-  private isEOF(): boolean {
-    return this.tokens[0]?.type == TokenTypes.EOF;
+  public get currentToken(): Token {
+    return this.tokens.at(this.trace.pos) as Token;
   }
 
-  private at(): Token {
-    return this.tokens[0] as Token;
-  }
-
-  private next(): Token {
-    return this.tokens[1] as Token;
-  }
-
-  private advance(): Token {
-    return this.tokens.shift() as Token;
-  }
-
-  private expect(type: TokenType, err: string) {
-    const prev = this.tokens.shift() as Token;
-    if (!prev || prev.type != type) {
-      console.error("[Parser] ", err, prev, " -- Expected: ", type);
-      process.exit(1);
-    }
-    return prev;
-  }
-
-  /***
-   ** - Order of Prescidence:
-   * Assignment Expression
-   * Object Expression
-   * Additive Expression
-   * Multiplication Expression
-   * Call Expression
-   * Member Expression
-   * Primary Expression
-   */
-
-  private parseStatement(): Expression {
-    switch (this.at().type) {
-      // case "Number":
-      // case "String":
-      case "Identifier":
-        return this.parseIdentifier();
-      case "Function":
-        return this.parseFunctionDeclaration();
-      case "If":
-        return this.ParseIfStatement();
-      case "Else":
-        console.error("Expected if condition before else");
-        process.exit(1);
-      case "Print":
-        return this.parsePrint();
-      case "FunctionCall":
-        return this.parseCallMemberExpression();
-      // case "Throw":
-      // case "Not":
-      // case "Equals":
-      // case "Greater":
-      // case "Less":
-      // case "Quotation":
-      // case "OpenBrace":
-      // case "CloseBrace":
-      // case "OpenBracket":
-      // case "CloseBracket":
-      // case "OpenParenthesis":
-      // case "CloseParenthesis":
-      // case "BinaryOperator":
-      // case "Comment":
-      // case "EOF":
-      case "EOL":
-        this.advance();
-      default:
-        return this.parseExpression();
-    }
-  }
-
-  private parseFunctionDeclaration(): Expression {
-    this.advance(); // go past 'real'
-    const name = this.expect(
-      "Identifier",
-      "Expected function name after declaration keyword.",
-    ).value;
-    const args = this.parseArgs();
-
-    args.forEach((param) => {
-      if (param.type !== "Identifier") {
-        console.error(
-          `Expected parameter ${param} to be an identifier (in function ${name})`,
-        );
-      }
-    });
-
-    const params = args.map((arg) => (arg as Identifier).symbol);
-
-    const body = this.parseCodeBlock();
-
-    const fn: FunctionDeclaration = {
-      type: "FunctionDeclaration",
-      name,
-      body,
-      params,
-    };
-
-    return fn;
-  }
-
-  private parseCodeBlock() {
-    this.expect("OpenBrace", "Expected '{' to start codeblock");
-
-    const body: Statement[] = [];
-
-    while (!this.isEOF() && this.at().type != TokenTypes.CloseBrace) {
-      body.push(this.parseStatement());
-    }
-    this.expect("CloseBrace", "Expected codeblock body to close");
-
-    return body;
-  }
-
-  private parseIdentifier(): Expression {
-    if (this.next().type == "Const") {
-      return this.parseVariableDeclaration(true);
-    } else if (this.next().type == "Let") {
-      return this.parseVariableDeclaration(false);
-    } else {
-      // console.error("Not implemented yet!");
-      // process.exit(1);
-      return this.parseExpression();
-    }
-  }
-
-  private parseExpression(): Expression {
-    return this.parseVariableAssignmentExpression();
-  }
-
-  private parseVariableAssignmentExpression(): Expression {
-    const lhs = this.parseObjectExpression();
-
-    if (this.at().type == "Assignment") {
-      this.advance();
-      const rhs = this.parseVariableAssignmentExpression();
-
-      const exp: VariableAssignmentExpression = {
-        type: "VariableAssignmentExpression",
-        assignee: lhs,
-        value: rhs,
-      };
-      return exp;
-    }
-
-    return lhs;
-  }
-
-  private parseObjectExpression(): Expression {
-    if (this.at().type !== "OpenBrace") {
-      return this.parseAdditiveExpression();
-    }
-
-    this.advance();
-
-    const properties = new Array<Property>();
-
-    while (!this.isEOF() && this.at().type !== "CloseBrace") {
-      const key = this.expect("Identifier", "Expected key for property").value;
-
-      if (this.at().type === "Comma" || this.at().type === "CloseBrace") {
-        if (this.at().type === "Comma") this.advance();
-
-        properties.push({
-          type: "Property",
-          key,
-        });
-        continue;
-      }
-
-      this.expect("Colon", "Expected ':' after key");
-
-      const value = this.parseExpression();
-
-      properties.push({
-        type: "Property",
-        key,
-        value,
-      });
-      if (this.at().type !== "CloseBrace") {
-        this.expect("Comma", "Unexpected end of Object literal");
-      }
-    }
-
-    this.expect("CloseBrace", "Expected Object literal to end");
-
-    const exp: ObjectLiteral = {
-      type: "ObjectLiteral",
-      properties,
-    };
-
-    return exp;
-  }
-
-  private parseAdditiveExpression(): Expression {
-    let lhs = this.parseMultiplicativeExpression();
-
-    while (this.at().value == "+" || this.at().value == "-") {
-      const operator = this.advance().value;
-      const rhs = this.parseMultiplicativeExpression();
-
-      lhs = {
-        type: "BinaryExpression",
-        lhs,
-        rhs,
-        operator,
-      } as BinaryExpression;
-    }
-
-    return lhs;
-  }
-
-  private parseMultiplicativeExpression(): Expression {
-    let lhs = this.parseCallMemberExpression();
-    // let lhs = this.parsePrimaryExpression();
-
-    while (["*", "/", "%"].includes(this.at().value)) {
-      const operator = this.advance().value;
-      const rhs = this.parseCallMemberExpression();
-      // const rhs = this.parsePrimaryExpression();
-
-      lhs = {
-        type: "BinaryExpression",
-        lhs,
-        rhs,
-        operator,
-      } as BinaryExpression;
-    }
-
-    return lhs;
-  }
-
-  private parseCallMemberExpression(): Expression {
-    const [member, isCallExp] = this.parseMemberExpression();
-
-    if (isCallExp) {
-      return this.parseCallExpression(member);
-    }
-
-    return member;
-  }
-
-  private parseCallExpression(callee: Expression): Expression {
-    let exp: Expression = {
-      type: "FunctionCallExpression",
-      callee,
-      args: this.parseArgs(),
-    } as FunctionCallExpression;
-
-    if (this.at().type == "FunctionCall") {
-      exp = this.parseCallExpression(exp);
-    }
-
-    return exp;
-  }
-
-  private parseMemberExpression(): [Expression, boolean] {
-    let isCallExp: boolean = false;
-
-    if (this.at().type == "FunctionCall") {
-      this.advance();
-      isCallExp = true;
-    }
-    let obj = this.parsePrimaryExpression();
-
-    // if (isCallExp) {
-    //   return this.parseCallExpression(obj);
-    // }
-
-    while (this.at().type == "Dot" || this.at().type == "OpenBracket") {
-      const operator = this.advance();
-      let property: Expression;
-      let computed: boolean;
-
-      if (operator.type == "Dot") {
-        computed = false;
-        property = this.parsePrimaryExpression();
-
-        if (property.type != "Identifier") {
-          console.error("Property is not an identifier");
-          process.exit(1);
-        }
-      } else {
-        computed = true;
-        property = this.parseExpression();
-
-        this.expect("CloseBracket", "Missing closing bracket");
-      }
-
-      obj = {
-        type: "MemberExpression",
-        object: obj,
-        property,
-        computed,
-      } as MemberExpression;
-    }
-    return [obj, isCallExp];
-  }
-
-  private parsePrimaryExpression(): Expression {
-    const token = this.at().type;
-
-    switch (token) {
-      case "Identifier":
-        return {
-          type: "Identifier",
-          symbol: this.advance().value,
-        } as Identifier;
-
-      case "Number":
-        return {
-          type: "NumericLiteral",
-          value: parseFloat(this.advance().value),
-        } as NumericLiteral;
-
-      case "OpenParenthesis":
-        this.advance();
-        const value = this.parseExpression();
-        this.expect(
-          "CloseParenthesis",
-          "Unexpected token. Expected closing parenthesis",
-        );
-        return value;
-
-      default:
-        console.error("[Parser] Unexpected token", this.at());
-        process.exit(1);
-    }
-  }
-
-  private parseVariableDeclaration(isConstant: boolean): Expression {
-    const identifier = this.expect(
-      "Identifier",
-      "Expected identifier name after declaration keyword.",
-    ).value;
-
-    if (this.at().type == "EOL") {
-      this.advance();
-      if (isConstant) {
-        console.error("Expected value when defining a constant expression!");
-        process.exit(1);
-      }
-
-      const dec: VariableDeclaration = {
-        type: "VariableDeclaration",
-        identifier,
-        isConstant,
-      };
-      return dec;
-    }
-
-    this.advance();
-    const value = this.parseExpression();
-    const declaration: VariableDeclaration = {
-      type: "VariableDeclaration",
-      value,
-      identifier,
-      isConstant,
-    };
-
-    this.expect("EOL", "Variable declaration statment must end with 'fr'.");
-    return declaration;
-  }
-
-  private parseArgs(): Expression[] {
-    const args =
-      this.at().type == "FunctionCallEnd" ? [] : this.parseArgsList();
-
-    this.expect(
-      "FunctionCallEnd",
-      "Missing 'rn' after function call expression.",
+  public get hasTokens(): boolean {
+    return (
+      this.trace.pos < this.tokens.length && this.currentToken.type !== "EOF"
     );
-
-    return args;
   }
 
-  private parseArgsList(): Expression[] {
-    const args = [this.parseVariableAssignmentExpression()];
+  public advance() {
+    const token = this.currentToken;
+    this.trace.pos++;
+    return token;
+  }
 
-    while (!this.isEOF() && this.at().type != "FunctionCallEnd") {
-      args.push(this.parseVariableAssignmentExpression());
+  public expect(type: TokenType, err?: string) {
+    const tk = this.currentToken;
+
+    if (tk.type !== type) {
+      raise(
+        err ??
+          `[Trace: ${this.trace.line}:${this.trace.pos}] Expected ${type}, but received ${tk.type} instead.`,
+      );
     }
-
-    return args;
+    return this.advance();
   }
 
-  private parsePrint(): Expression {
-    this.advance();
-
-    const args = this.parseArgs();
-
-    const exp: PrintExpression = {
-      type: "PrintExpression",
-      args,
-    };
-
-    return exp;
-  }
-
-  private ParseIfStatement(): IfStatement {
-    this.advance();
-    this.expect("OpenParenthesis", "Expected ( after if");
-
-    const condition = this.parseExpression();
-
-    this.expect("CloseParenthesis", "Expected ) after condition");
-
-    const body = this.parseCodeBlock();
-
-    let orElse: IfStatement | undefined = undefined;
-
-    if (this.at().type === "Else") {
-      orElse = this.ParseIfStatement();
-    }
-
-    const exp: IfStatement = {
-      type: "IfCondition",
-      condition,
-      body,
-      orElse,
-    };
-
-    return exp;
-  }
+  // public createAST(srcString: string): Program {
+  //   const lexer = new Lexer(srcString);
+  //
+  //   this.tokens = lexer.tokenize();
+  //
+  //   console.log("-------------------- AST --------------------\n", this.tokens);
+  //   console.log("\n---------------------------------------------");
+  //
+  //   // return {} as Program;
+  //   const program: Program = {
+  //     type: "Program",
+  //     body: [],
+  //   };
+  //
+  //   while (!this.isEOF()) {
+  //     program.body.push(this.parseStatement());
+  //   }
+  //
+  //   return program;
+  // }
+  //
+  // private isEOF(): boolean {
+  //   return this.tokens[0]?.type == TokenTypes.EOF;
+  // }
+  //
+  // private at(): Token {
+  //   return this.tokens[0] as Token;
+  // }
+  //
+  // private next(): Token {
+  //   return this.tokens[1] as Token;
+  // }
+  //
+  //
+  // /***
+  //  ** - Order of Prescidence:
+  //  * Assignment Expression
+  //  * Object Expression
+  //  * Additive Expression
+  //  * Multiplication Expression
+  //  * Call Expression
+  //  * Member Expression
+  //  * Primary Expression
+  //  */
+  //
+  // private parseStatementOld(): Expression {
+  //   switch (this.at().type) {
+  //     // case "Number":
+  //     // case "String":
+  //     case "Identifier":
+  //       return this.parseIdentifier();
+  //     case "Function":
+  //       return this.parseFunctionDeclaration();
+  //     case "If":
+  //       return this.ParseIfStatement();
+  //     case "Else":
+  //       console.error("Expected if condition before else");
+  //       process.exit(1);
+  //     case "Print":
+  //       return this.parsePrint();
+  //     case "FunctionCall":
+  //       return this.parseCallMemberExpression();
+  //     // case "Throw":
+  //     // case "Not":
+  //     // case "Equals":
+  //     // case "Greater":
+  //     // case "Less":
+  //     // case "Quotation":
+  //     // case "OpenBrace":
+  //     // case "CloseBrace":
+  //     // case "OpenBracket":
+  //     // case "CloseBracket":
+  //     // case "OpenParenthesis":
+  //     // case "CloseParenthesis":
+  //     // case "BinaryOperator":
+  //     // case "Comment":
+  //     // case "EOF":
+  //     case "EOL":
+  //       this.advance();
+  //     default:
+  //       return this.parseExpression();
+  //   }
+  // }
+  //
+  // private parseFunctionDeclaration(): Expression {
+  //   this.advance(); // go past 'real'
+  //   const name = this.expect(
+  //     "Identifier",
+  //     "Expected function name after declaration keyword.",
+  //   ).value;
+  //   const args = this.parseArgs();
+  //
+  //   args.forEach((param) => {
+  //     if (param.type !== "Identifier") {
+  //       console.error(
+  //         `Expected parameter ${param} to be an identifier (in function ${name})`,
+  //       );
+  //     }
+  //   });
+  //
+  //   const params = args.map((arg) => (arg as Identifier).symbol);
+  //
+  //   const body = this.parseCodeBlock();
+  //
+  //   const fn: FunctionDeclaration = {
+  //     type: "FunctionDeclaration",
+  //     name,
+  //     body,
+  //     params,
+  //   };
+  //
+  //   return fn;
+  // }
+  //
+  // private parseCodeBlock() {
+  //   this.expect("OpenBrace", "Expected '{' to start codeblock");
+  //
+  //   const body: Statement[] = [];
+  //
+  //   while (!this.isEOF() && this.at().type != TokenTypes.CloseBrace) {
+  //     body.push(this.parseStatement());
+  //   }
+  //   this.expect("CloseBrace", "Expected codeblock body to close");
+  //
+  //   return body;
+  // }
+  //
+  // private parseIdentifier(): Expression {
+  //   if (this.next().type == "Const") {
+  //     return this.parseVariableDeclaration(true);
+  //   } else if (this.next().type == "Let") {
+  //     return this.parseVariableDeclaration(false);
+  //   } else {
+  //     // console.error("Not implemented yet!");
+  //     // process.exit(1);
+  //     return this.parseExpression();
+  //   }
+  // }
+  //
+  // private parseExpression(): Expression {
+  //   return this.parseVariableAssignmentExpression();
+  // }
+  //
+  // private parseVariableAssignmentExpression(): Expression {
+  //   const lhs = this.parseObjectExpression();
+  //
+  //   if (this.at().type == "Assignment") {
+  //     this.advance();
+  //     const rhs = this.parseVariableAssignmentExpression();
+  //
+  //     const exp: VariableAssignmentExpression = {
+  //       type: "VariableAssignmentExpression",
+  //       assignee: lhs,
+  //       value: rhs,
+  //     };
+  //     return exp;
+  //   }
+  //
+  //   return lhs;
+  // }
+  //
+  // private parseObjectExpression(): Expression {
+  //   if (this.at().type !== "OpenBrace") {
+  //     return this.parseAdditiveExpression();
+  //   }
+  //
+  //   this.advance();
+  //
+  //   const properties = new Array<Property>();
+  //
+  //   while (!this.isEOF() && this.at().type !== "CloseBrace") {
+  //     const key = this.expect("Identifier", "Expected key for property").value;
+  //
+  //     if (this.at().type === "Comma" || this.at().type === "CloseBrace") {
+  //       if (this.at().type === "Comma") this.advance();
+  //
+  //       properties.push({
+  //         type: "Property",
+  //         key,
+  //       });
+  //       continue;
+  //     }
+  //
+  //     this.expect("Colon", "Expected ':' after key");
+  //
+  //     const value = this.parseExpression();
+  //
+  //     properties.push({
+  //       type: "Property",
+  //       key,
+  //       value,
+  //     });
+  //     if (this.at().type !== "CloseBrace") {
+  //       this.expect("Comma", "Unexpected end of Object literal");
+  //     }
+  //   }
+  //
+  //   this.expect("CloseBrace", "Expected Object literal to end");
+  //
+  //   const exp: ObjectLiteral = {
+  //     type: "ObjectLiteral",
+  //     value: properties,
+  //   };
+  //
+  //   return exp;
+  // }
+  //
+  // private parseAdditiveExpression(): Expression {
+  //   let lhs = this.parseMultiplicativeExpression();
+  //
+  //   while (this.at().value == "+" || this.at().value == "-") {
+  //     const operator = this.advance().value;
+  //     const rhs = this.parseMultiplicativeExpression();
+  //
+  //     lhs = {
+  //       type: "BinaryExpression",
+  //       lhs,
+  //       rhs,
+  //       operator,
+  //     } as BinaryExpression;
+  //   }
+  //
+  //   return lhs;
+  // }
+  //
+  // private parseMultiplicativeExpression(): Expression {
+  //   let lhs = this.parseCallMemberExpression();
+  //   // let lhs = this.parsePrimaryExpression();
+  //
+  //   while (["*", "/", "%"].includes(this.at().value)) {
+  //     const operator = this.advance().value;
+  //     const rhs = this.parseCallMemberExpression();
+  //     // const rhs = this.parsePrimaryExpression();
+  //
+  //     lhs = {
+  //       type: "BinaryExpression",
+  //       lhs,
+  //       rhs,
+  //       operator,
+  //     } as BinaryExpression;
+  //   }
+  //
+  //   return lhs;
+  // }
+  //
+  // private parseCallMemberExpression(): Expression {
+  //   const [member, isCallExp] = this.parseMemberExpression();
+  //
+  //   if (isCallExp) {
+  //     return this.parseCallExpression(member);
+  //   }
+  //
+  //   return member;
+  // }
+  //
+  // private parseCallExpression(callee: Expression): Expression {
+  //   let exp: Expression = {
+  //     type: "FunctionCallExpression",
+  //     callee,
+  //     args: this.parseArgs(),
+  //   } as FunctionCallExpression;
+  //
+  //   if (this.at().type == "FunctionCall") {
+  //     exp = this.parseCallExpression(exp);
+  //   }
+  //
+  //   return exp;
+  // }
+  //
+  // private parseMemberExpression(): [Expression, boolean] {
+  //   let isCallExp: boolean = false;
+  //
+  //   if (this.at().type == "FunctionCall") {
+  //     this.advance();
+  //     isCallExp = true;
+  //   }
+  //   let obj = this.parsePrimaryExpression();
+  //
+  //   // if (isCallExp) {
+  //   //   return this.parseCallExpression(obj);
+  //   // }
+  //
+  //   while (this.at().type == "Dot" || this.at().type == "OpenBracket") {
+  //     const operator = this.advance();
+  //     let property: Expression;
+  //     let computed: boolean;
+  //
+  //     if (operator.type == "Dot") {
+  //       computed = false;
+  //       property = this.parsePrimaryExpression();
+  //
+  //       if (property.type != "Identifier") {
+  //         console.error("Property is not an identifier");
+  //         process.exit(1);
+  //       }
+  //     } else {
+  //       computed = true;
+  //       property = this.parseExpression();
+  //
+  //       this.expect("CloseBracket", "Missing closing bracket");
+  //     }
+  //
+  //     obj = {
+  //       type: "MemberExpression",
+  //       object: obj,
+  //       property,
+  //       computed,
+  //     } as MemberExpression;
+  //   }
+  //   return [obj, isCallExp];
+  // }
+  //
+  // private parsePrimaryExpression(): Expression {
+  //   const token = this.at().type;
+  //
+  //   switch (token) {
+  //     case "Identifier":
+  //       return {
+  //         type: "Identifier",
+  //         symbol: this.advance().value,
+  //       } as Identifier;
+  //
+  //     case "Number":
+  //       return {
+  //         type: "NumericLiteral",
+  //         value: parseFloat(this.advance().value),
+  //       } as NumericLiteral;
+  //
+  //     case "OpenParenthesis":
+  //       this.advance();
+  //       const value = this.parseExpression();
+  //       this.expect(
+  //         "CloseParenthesis",
+  //         "Unexpected token. Expected closing parenthesis",
+  //       );
+  //       return value;
+  //
+  //     default:
+  //       console.error("[Parser] Unexpected token", this.at());
+  //       process.exit(1);
+  //   }
+  // }
+  //
+  // private parseVariableDeclaration(isConstant: boolean): Expression {
+  //   const identifier = this.expect(
+  //     "Identifier",
+  //     "Expected identifier name after declaration keyword.",
+  //   ).value;
+  //
+  //   if (this.at().type == "EOL") {
+  //     this.advance();
+  //     if (isConstant) {
+  //       console.error("Expected value when defining a constant expression!");
+  //       process.exit(1);
+  //     }
+  //
+  //     const dec: VariableDeclaration = {
+  //       type: "VariableDeclaration",
+  //       identifier,
+  //       isConstant,
+  //     };
+  //     return dec;
+  //   }
+  //
+  //   this.advance();
+  //   const value = this.parseExpression();
+  //   const declaration: VariableDeclaration = {
+  //     type: "VariableDeclaration",
+  //     value,
+  //     identifier,
+  //     isConstant,
+  //   };
+  //
+  //   this.expect("EOL", "Variable declaration statment must end with 'fr'.");
+  //   return declaration;
+  // }
+  //
+  // private parseArgs(): Expression[] {
+  //   const args =
+  //     this.at().type == "FunctionCallEnd" ? [] : this.parseArgsList();
+  //
+  //   this.expect(
+  //     "FunctionCallEnd",
+  //     "Missing 'rn' after function call expression.",
+  //   );
+  //
+  //   return args;
+  // }
+  //
+  // private parseArgsList(): Expression[] {
+  //   const args = [this.parseVariableAssignmentExpression()];
+  //
+  //   while (!this.isEOF() && this.at().type != "FunctionCallEnd") {
+  //     args.push(this.parseVariableAssignmentExpression());
+  //   }
+  //
+  //   return args;
+  // }
+  //
+  // private parsePrint(): Expression {
+  //   this.advance();
+  //
+  //   const args = this.parseArgs();
+  //
+  //   const exp: PrintExpression = {
+  //     type: "PrintExpression",
+  //     args,
+  //   };
+  //
+  //   return exp;
+  // }
+  //
+  // private ParseIfStatement(): IfStatement {
+  //   this.advance();
+  //   this.expect("OpenParenthesis", "Expected ( after if");
+  //
+  //   const condition = this.parseExpression();
+  //
+  //   this.expect("CloseParenthesis", "Expected ) after condition");
+  //
+  //   const body = this.parseCodeBlock();
+  //
+  //   let orElse: IfStatement | undefined = undefined;
+  //
+  //   if (this.at().type === "Else") {
+  //     orElse = this.ParseIfStatement();
+  //   }
+  //
+  //   const exp: IfStatement = {
+  //     type: "IfCondition",
+  //     condition,
+  //     body,
+  //     orElse,
+  //   };
+  //
+  //   return exp;
+  // }
 }
