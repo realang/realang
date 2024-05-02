@@ -8,7 +8,7 @@ export const TokenTypes = {
 
   Let: "Let",
   Const: "Const",
-  Assignment: "Assignment",
+  Reassign: "Reassign",
   Function: "Function",
   If: "If",
   Else: "Else",
@@ -61,8 +61,8 @@ export const Keywords = {
   or: TokenTypes.Or,
   no: TokenTypes.Not,
 
-  better: TokenTypes.Assignment,
-  be: TokenTypes.Assignment,
+  better: TokenTypes.Reassign,
+  be: TokenTypes.Reassign,
 
   bro: TokenTypes.Print,
   really: TokenTypes.Print,

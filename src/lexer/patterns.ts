@@ -25,6 +25,21 @@ export const patterns: LexerPattern[] = [
       const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
       lex.tokens.push({
+        type: "Print",
+        value,
+      });
+
+      lex.advancePos(value.length);
+    },
+  },
+
+  {
+    regex: /bro really said/,
+    handler: (lex, regex) => {
+      const match = regex.exec(lex.srcAfterPos());
+      const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
+
+      lex.tokens.push({
         type: "Let",
         value,
       });
