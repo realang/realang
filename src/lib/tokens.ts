@@ -8,8 +8,9 @@ export const TokenTypes = {
 
   Let: "Let",
   Const: "Const",
-  Reassign: "Reassign",
+  Assignment: "Assignment",
   Function: "Function",
+  Record: "Record",
   If: "If",
   Else: "Else",
   Print: "Print",
@@ -54,15 +55,18 @@ export const Keywords = {
   if: TokenTypes.If,
   else: TokenTypes.Else,
   is: TokenTypes.Const,
-  const: TokenTypes.Const,
   rn: TokenTypes.FunctionCallEnd,
   fr: TokenTypes.EOL,
   and: TokenTypes.And,
   or: TokenTypes.Or,
   no: TokenTypes.Not,
+  record: TokenTypes.Record,
 
-  better: TokenTypes.Reassign,
-  be: TokenTypes.Reassign,
+  thinks: TokenTypes.Let,
+  hes: TokenTypes.Let,
+
+  better: TokenTypes.Assignment,
+  be: TokenTypes.Assignment,
 
   bro: TokenTypes.Print,
   really: TokenTypes.Print,

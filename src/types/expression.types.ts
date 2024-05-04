@@ -26,6 +26,8 @@ export interface BinaryExpression extends Expression {
   operator: Token;
 }
 
+// --> <--
+
 export interface MemberExpression extends Expression {
   type: "MemberExpression";
   object: Expression;
@@ -37,6 +39,13 @@ export interface FunctionCallExpression extends Expression {
   type: "FunctionCallExpression";
   args: Expression[];
   callee: Expression;
+}
+
+export interface VariableDeclarationExpression extends Expression {
+  type: "VariableDeclaration";
+  identifier: Expression;
+  value: Expression;
+  isConstant: boolean;
 }
 
 export interface VariableAssignmentExpression extends Expression {
@@ -59,4 +68,10 @@ export interface Property extends Expression {
   type: "Property";
   key: string;
   value?: Expression;
+}
+
+export interface PrefixExpression extends Expression {
+  type: "PrefixExpression";
+  rhs: Expression;
+  operator: Token;
 }

@@ -25,7 +25,7 @@ export const patterns: LexerPattern[] = [
       const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
       lex.tokens.push({
-        type: "Print",
+        type: "Let",
         value,
       });
 
@@ -40,7 +40,7 @@ export const patterns: LexerPattern[] = [
       const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
       lex.tokens.push({
-        type: "Reassign",
+        type: "Assignment",
         value,
       });
 
@@ -55,7 +55,7 @@ export const patterns: LexerPattern[] = [
       const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
       lex.tokens.push({
-        type: "Let",
+        type: "Print",
         value,
       });
 

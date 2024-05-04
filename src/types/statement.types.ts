@@ -1,10 +1,10 @@
-import { Expression, Identifier } from "./expression.types";
-import { Token } from "./tokens.types";
+import { Expression } from "./expression.types";
 
 export type StatementType =
   | "Program"
   | "VariableDeclaration"
   | "FunctionDeclaration"
+  | "RecordDeclaration"
   | "Property"
   | "ObjectLiteral"
   | "NumericLiteral"
@@ -17,6 +17,7 @@ export type StatementType =
   | "MemberExpression"
   | "FunctionCallExpression"
   | "PrintExpression"
+  | "PrefixExpression"
   | "IfCondition"
   | "VariableAssignmentExpression";
 
@@ -39,18 +40,17 @@ export interface BlockStatement extends Statement {
   body: Statement[];
 }
 
-export interface VariableDeclarationStatement extends Statement {
-  type: "VariableDeclaration";
-  identifier: Token;
-  isConstant: boolean;
-  value: Expression;
-}
-
 export interface FunctionDeclaration extends Statement {
   type: "FunctionDeclaration";
   name: string;
   params: string[];
   body: Statement[];
+}
+
+export interface RecordDeclaration extends Statement {
+  type: "RecordDeclaration";
+  name: string;
+  properties: Map<string, Expression>;
 }
 
 export interface IfStatement extends Statement {

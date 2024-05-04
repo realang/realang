@@ -1,7 +1,12 @@
 import { Parser } from ".";
 import { Expression, Statement, TokenType } from "../types";
-import { parseBinaryExpression, parsePrimaryExpression } from "./expression";
-import { parseVariableDeclarationStatement } from "./statement";
+import {
+  parseAssignmentExpression,
+  parseBinaryExpression,
+  parsePrefixExpression,
+  parsePrimaryExpression,
+  parseVariableDeclarationExpression,
+} from "./expression";
 
 export const BindingPowerTable = {
   default: 0,
@@ -38,8 +43,7 @@ export const led = (type: TokenType, bp: BindingPower, handler: LedHandler) => {
   ledLookup.set(type, handler);
 };
 
-export const nud = (type: TokenType, bp: BindingPower, handler: NudHandler) => {
-  bpLookup.set(type, bp);
+export const nud = (type: TokenType, handler: NudHandler) => {
   nudLookup.set(type, handler);
 };
 
@@ -49,12 +53,19 @@ export const statement = (type: TokenType, handler: StatementHandler) => {
 };
 
 export const createLookups = () => {
-  // --> Statements <--
-  statement("Let", parseVariableDeclarationStatement);
-  statement("Const", parseVariableDeclarationStatement);
-
   // --> LED & NUD <--
+
+  // -> 2
+  led(
+    "Const",
+    BindingPowerTable.assignment,
+    parseVariableDeclarationExpression,
+  );
+  led("Let", BindingPowerTable.assignment, parseVariableDeclarationExpression);
+  led("Assignment", BindingPowerTable.assignment, parseAssignmentExpression);
+
   // -> 3
+
   led("And", BindingPowerTable.logical, parseBinaryExpression);
   led("Or", BindingPowerTable.logical, parseBinaryExpression);
 
@@ -75,7 +86,8 @@ export const createLookups = () => {
   led("Modular", BindingPowerTable.multiplicative, parseBinaryExpression);
 
   // -> 10
-  nud("Number", BindingPowerTable.primary, parsePrimaryExpression);
-  nud("String", BindingPowerTable.primary, parsePrimaryExpression);
-  nud("Identifier", BindingPowerTable.primary, parsePrimaryExpression);
+  nud("Number", parsePrimaryExpression);
+  nud("String", parsePrimaryExpression);
+  nud("Identifier", parsePrimaryExpression);
+  nud("Minus", parsePrefixExpression);
 };

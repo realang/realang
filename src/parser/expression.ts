@@ -4,9 +4,12 @@ import {
   Expression,
   Identifier,
   NumericLiteral,
+  PrefixExpression,
   StringLiteral,
-  raise,
-} from "../util";
+  VariableAssignmentExpression,
+  VariableDeclarationExpression,
+} from "../types";
+import { raise } from "../util";
 import {
   BindingPower,
   BindingPowerTable,
@@ -43,7 +46,11 @@ export const parseExpression = (
       return {} as Expression; // ! Unreachable
     }
 
-    lhs = ledHandler(parser, lhs, bp);
+    lhs = ledHandler(
+      parser,
+      lhs,
+      bpLookup.get(parser.currentToken.type) ?? BindingPowerTable.default,
+    );
   }
 
   return lhs;
@@ -100,6 +107,67 @@ export const parseBinaryExpression = (
     rhs,
     operator,
   };
+
+  return expr;
+};
+
+export const parsePrefixExpression = (parser: Parser): Expression => {
+  const operator = parser.advance();
+  const rhs = parseExpression(parser, BindingPowerTable.default);
+
+  const expr: PrefixExpression = {
+    type: "PrefixExpression",
+    rhs,
+    operator,
+  };
+
+  return expr;
+};
+
+export const parseVariableDeclarationExpression = (
+  parser: Parser,
+  lhs: Expression,
+  bp: BindingPower,
+): Expression => {
+  const isConstant = parser.currentToken.type === "Const";
+
+  parser.advance();
+
+  const rhs = parseExpression(parser, bp);
+
+  const expr: VariableDeclarationExpression = {
+    type: "VariableDeclaration",
+    identifier: lhs,
+    value: rhs,
+    isConstant,
+  };
+
+  return expr;
+};
+
+export const parseAssignmentExpression = (
+  parser: Parser,
+  lhs: Expression,
+  bp: BindingPower,
+): Expression => {
+  parser.advance();
+  const rhs = parseExpression(parser, bp);
+
+  const expr: VariableAssignmentExpression = {
+    type: "VariableAssignmentExpression",
+    assignee: lhs,
+    value: rhs,
+  };
+
+  return expr;
+};
+
+export const parseGroupingExpression = (parser: Parser) => {
+  parser.advance();
+
+  const expr = parseExpression(parser, BindingPowerTable.default);
+
+  parser.expect("CloseParenthesis");
 
   return expr;
 };
