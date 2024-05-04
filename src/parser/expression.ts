@@ -1,10 +1,13 @@
+import { BindOptions } from "dgram";
 import { Parser } from ".";
 import {
+  ArrayLiteral,
   BinaryExpression,
   Expression,
   Identifier,
   NumericLiteral,
   PrefixExpression,
+  RecordConstructionExpression,
   StringLiteral,
   VariableAssignmentExpression,
   VariableDeclarationExpression,
@@ -19,6 +22,7 @@ import {
   nudLookup,
 } from "./lookups";
 import { parseType } from "./types";
+import { warn } from "console";
 
 export const parseExpression = (
   parser: Parser,
@@ -170,7 +174,7 @@ export const parseAssignmentExpression = (
   const rhs = parseExpression(parser, bp);
 
   const expr: VariableAssignmentExpression = {
-    type: "VariableAssignmentExpression",
+    type: "VariableAssignment",
     assignee: lhs,
     value: rhs,
   };
@@ -184,6 +188,61 @@ export const parseGroupingExpression = (parser: Parser) => {
   const expr = parseExpression(parser, BindingPowerTable.default);
 
   parser.expect("CloseParenthesis");
+
+  return expr;
+};
+
+export const parseRecordConstruction = (
+  parser: Parser,
+  lhs: Expression,
+  bp: BindingPower,
+): Expression => {
+  if (!("value" in lhs) || typeof lhs.value !== "string")
+    return {} as Expression;
+  const name = lhs.value;
+  const properties: RecordConstructionExpression["properties"] = new Map();
+
+  parser.expect("OpenBrace");
+
+  while (parser.hasTokens && parser.currentToken.type !== "CloseBrace") {
+    const propName = parser.expect("Identifier").value;
+    parser.expect("Colon");
+    const propValue = parseExpression(parser, BindingPowerTable.assignment);
+    properties.set(propName, propValue);
+  }
+
+  parser.expect("CloseBrace");
+
+  const expr: RecordConstructionExpression = {
+    type: "RecordConstruction",
+    name,
+    properties,
+  };
+
+  return expr;
+};
+
+export const parseArrayLiteral = (parser: Parser): Expression => {
+  parser.expect("OpenBracket");
+
+  const value = Array<Expression>();
+
+  while (parser.hasTokens && parser.currentToken.type !== "CloseBracket") {
+    const prop = parseExpression(parser, BindingPowerTable.assignment);
+    value.push(prop);
+
+    // @ts-ignore
+    if (parser.currentToken.type !== "CloseBracket") {
+      parser.expect("Comma");
+    }
+  }
+
+  parser.expect("CloseBracket");
+
+  const expr: ArrayLiteral = {
+    type: "ArrayLiteral",
+    value,
+  };
 
   return expr;
 };

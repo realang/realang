@@ -4,24 +4,11 @@ import { Type } from "./types.types";
 
 export type StatementType =
   | "Program"
-  | "VariableDeclaration"
   | "FunctionDeclaration"
   | "RecordDeclaration"
-  | "Property"
-  | "ObjectLiteral"
-  | "NumericLiteral"
-  | "StringLiteral"
-  | "Identifier"
-  | "Symbol"
   | "Block"
   | "Expression"
-  | "BinaryExpression"
-  | "MemberExpression"
-  | "FunctionCallExpression"
-  | "PrintExpression"
-  | "PrefixExpression"
-  | "IfCondition"
-  | "VariableAssignmentExpression";
+  | "IfCondition";
 
 export interface Statement {
   type: StatementType;

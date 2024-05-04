@@ -1,8 +1,25 @@
-import { Statement } from "./statement.types";
 import { Token } from "./tokens.types";
 import { Type } from "./types.types";
 
-export interface Expression extends Statement {}
+type ExpressionType =
+  | "VariableDeclaration"
+  | "RecordConstruction"
+  | "VariableAssignment"
+  | "Property"
+  | "NumericLiteral"
+  | "StringLiteral"
+  | "ObjectLiteral"
+  | "ArrayLiteral"
+  | "Identifier"
+  | "BinaryExpression"
+  | "MemberExpression"
+  | "FunctionCallExpression"
+  | "PrintExpression"
+  | "PrefixExpression";
+
+export interface Expression {
+  type: ExpressionType;
+}
 
 // --> Literal Expressions <--
 export interface NumericLiteral extends Expression {
@@ -10,15 +27,22 @@ export interface NumericLiteral extends Expression {
   value: number;
 }
 
+export interface StringLiteral extends Expression {
+  type: "StringLiteral";
+  value: string;
+}
+
 export interface ObjectLiteral extends Expression {
   type: "ObjectLiteral";
   value: Property[];
 }
 
-export interface StringLiteral extends Expression {
-  type: "StringLiteral";
-  value: string;
+export interface ArrayLiteral extends Expression {
+  type: "ArrayLiteral";
+  value: Expression[];
 }
+
+// --> <--
 
 export interface BinaryExpression extends Expression {
   type: "BinaryExpression";
@@ -26,8 +50,6 @@ export interface BinaryExpression extends Expression {
   rhs: Expression;
   operator: Token;
 }
-
-// --> <--
 
 export interface MemberExpression extends Expression {
   type: "MemberExpression";
@@ -51,9 +73,15 @@ export interface VariableDeclarationExpression extends Expression {
 }
 
 export interface VariableAssignmentExpression extends Expression {
-  type: "VariableAssignmentExpression";
+  type: "VariableAssignment";
   assignee: Expression;
   value: Expression;
+}
+
+export interface RecordConstructionExpression extends Expression {
+  type: "RecordConstruction";
+  name: string;
+  properties: Map<string, Expression>;
 }
 
 export interface PrintExpression extends Expression {

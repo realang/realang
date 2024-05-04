@@ -1,6 +1,0 @@
-record MyRecord {
-  name: string fr
-  age: number fr
-  hobbies: Array<string> fr
-}
-

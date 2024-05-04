@@ -1,10 +1,12 @@
 import { Parser } from ".";
 import { Expression, Statement, TokenType } from "../types";
 import {
+  parseArrayLiteral,
   parseAssignmentExpression,
   parseBinaryExpression,
   parsePrefixExpression,
   parsePrimaryExpression,
+  parseRecordConstruction,
   parseVariableDeclarationExpression,
 } from "./expression";
 import { parseRecordDeclarationStatement } from "./statement";
@@ -89,9 +91,13 @@ export const createLookups = () => {
   led("Divide", BindingPowerTable.multiplicative, parseBinaryExpression);
   led("Modular", BindingPowerTable.multiplicative, parseBinaryExpression);
 
+  // -> 8
+  led("OpenBrace", BindingPowerTable.call, parseRecordConstruction);
+
   // -> 10
   nud("Number", parsePrimaryExpression);
   nud("String", parsePrimaryExpression);
   nud("Identifier", parsePrimaryExpression);
+  nud("OpenBracket", parseArrayLiteral);
   nud("Minus", parsePrefixExpression);
 };
