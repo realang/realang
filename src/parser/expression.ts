@@ -9,6 +9,7 @@ import {
   VariableAssignmentExpression,
   VariableDeclarationExpression,
 } from "../types";
+import { Type } from "../types/types.types";
 import { raise } from "../util";
 import {
   BindingPower,
@@ -17,6 +18,7 @@ import {
   ledLookup,
   nudLookup,
 } from "./lookups";
+import { parseType } from "./types";
 
 export const parseExpression = (
   parser: Parser,
@@ -129,16 +131,30 @@ export const parseVariableDeclarationExpression = (
   lhs: Expression,
   bp: BindingPower,
 ): Expression => {
+  let explicitType: Type | undefined = undefined;
+  let value: Expression | undefined = undefined;
   const isConstant = parser.currentToken.type === "Const";
 
   parser.advance();
 
-  const rhs = parseExpression(parser, bp);
+  if (parser.currentToken.type !== "ExplicitType") {
+    value = parseExpression(parser, bp);
+  }
+
+  if (parser.currentToken.type === "ExplicitType") {
+    parser.advance();
+    explicitType = parseType(parser, BindingPowerTable.default);
+  }
+
+  if (isConstant && !value) {
+    raise("Cannot declare constant entity without value (are you stupid?)");
+  }
 
   const expr: VariableDeclarationExpression = {
     type: "VariableDeclaration",
     identifier: lhs,
-    value: rhs,
+    value,
+    explicitType,
     isConstant,
   };
 

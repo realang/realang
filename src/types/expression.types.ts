@@ -1,5 +1,6 @@
 import { Statement } from "./statement.types";
 import { Token } from "./tokens.types";
+import { Type } from "./types.types";
 
 export interface Expression extends Statement {}
 
@@ -44,7 +45,8 @@ export interface FunctionCallExpression extends Expression {
 export interface VariableDeclarationExpression extends Expression {
   type: "VariableDeclaration";
   identifier: Expression;
-  value: Expression;
+  value?: Expression;
+  explicitType?: Type;
   isConstant: boolean;
 }
 

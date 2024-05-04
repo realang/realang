@@ -3,6 +3,7 @@ import { BlockStatement, Statement, Token, TokenType } from "../types";
 import { raise } from "../util";
 import { createLookups } from "./lookups";
 import { parseStatement } from "./statement";
+import { createTypeLookups } from "./types";
 
 export interface IParser {
   tokens: Array<Token>;
@@ -16,6 +17,7 @@ export class Parser implements IParser {
 
   public constructor(tokens: Array<Token>) {
     createLookups();
+    createTypeLookups();
 
     this.tokens = tokens;
 

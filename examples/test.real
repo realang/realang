@@ -1,2 +1,6 @@
-a is x+y fr
-a better be 15 fr
+record MyRecord {
+  name: string fr
+  age: number fr
+  hobbies: Array<string> fr
+}
+

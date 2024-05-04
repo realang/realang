@@ -49,6 +49,21 @@ export const patterns: LexerPattern[] = [
   },
 
   {
+    regex: /of type/,
+    handler: (lex, regex) => {
+      const match = regex.exec(lex.srcAfterPos());
+      const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
+
+      lex.tokens.push({
+        type: "ExplicitType",
+        value,
+      });
+
+      lex.advancePos(value.length);
+    },
+  },
+
+  {
     regex: /bro really said/,
     handler: (lex, regex) => {
       const match = regex.exec(lex.srcAfterPos());
@@ -87,4 +102,7 @@ export const patterns: LexerPattern[] = [
   { regex: /\*/, handler: handleDefault("Multiply", "*") },
   { regex: /\//, handler: handleDefault("Divide", "/") },
   { regex: /%/, handler: handleDefault("Modular", "%") },
+
+  { regex: /</, handler: handleDefault("Less", "<") },
+  { regex: />/, handler: handleDefault("Greater", ">") },
 ];

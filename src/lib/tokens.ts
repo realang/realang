@@ -17,6 +17,9 @@ export const TokenTypes = {
   FunctionCall: "FunctionCall",
   Throw: "Throw",
 
+  ExplicitType: "ExplicitType",
+  ArrayType: "ArrayType",
+
   Dot: "Dot",
   Comma: "Comma",
   Colon: "Colon",
@@ -64,6 +67,9 @@ export const Keywords = {
 
   thinks: TokenTypes.Let,
   hes: TokenTypes.Let,
+
+  "of type": TokenTypes.ExplicitType,
+  Array: TokenTypes.ArrayType,
 
   better: TokenTypes.Assignment,
   be: TokenTypes.Assignment,

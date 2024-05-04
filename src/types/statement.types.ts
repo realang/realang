@@ -1,4 +1,6 @@
 import { Expression } from "./expression.types";
+import { Token } from "./tokens.types";
+import { Type } from "./types.types";
 
 export type StatementType =
   | "Program"
@@ -47,10 +49,11 @@ export interface FunctionDeclaration extends Statement {
   body: Statement[];
 }
 
-export interface RecordDeclaration extends Statement {
+export interface RecordDeclarationStatement extends Statement {
   type: "RecordDeclaration";
-  name: string;
-  properties: Map<string, Expression>;
+  name: Token;
+  properties: Map<string, Type>;
+  // methods: Map<string, Object>; //TODO add FunctionType
 }
 
 export interface IfStatement extends Statement {

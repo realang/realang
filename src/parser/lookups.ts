@@ -7,6 +7,7 @@ import {
   parsePrimaryExpression,
   parseVariableDeclarationExpression,
 } from "./expression";
+import { parseRecordDeclarationStatement } from "./statement";
 
 export const BindingPowerTable = {
   default: 0,
@@ -53,6 +54,9 @@ export const statement = (type: TokenType, handler: StatementHandler) => {
 };
 
 export const createLookups = () => {
+  // ---> STATEMENTS <---
+  statement("Record", parseRecordDeclarationStatement);
+
   // --> LED & NUD <--
 
   // -> 2
