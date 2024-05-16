@@ -56,10 +56,9 @@ const main = async () => {
 
   const parser = new Parser(tokens);
   const ast = parser.parse();
-  const interpreter = new Interpreter();
+  // const interpreter = new Interpreter();
   // const globalScope = new Scope();
-  console.log(interpreter.transpile(ast));
-  console.log("Hello something");
+  // console.log(interpreter.transpile(ast));
   console.log(
     util.inspect(ast, { showHidden: false, depth: null, colors: true })
   );

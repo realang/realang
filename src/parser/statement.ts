@@ -8,7 +8,7 @@ import {
 import { Type } from "../types/types.types";
 import { raise } from "../util";
 import { parseExpression } from "./expression";
-import { BindingPowerTable, statementLookup } from "./lookups";
+import { BindingPower, statementLookup } from "./lookups";
 import { parseType } from "./types";
 
 export const parseStatement = (parser: Parser): Statement => {
@@ -22,7 +22,7 @@ export const parseStatement = (parser: Parser): Statement => {
 };
 
 export const parseExpressionStatement = (parser: Parser): Statement => {
-  const expr = parseExpression(parser, BindingPowerTable.default);
+  const expr = parseExpression(parser, BindingPower.default);
 
   parser.expect(TokenType.EOL);
 
@@ -55,7 +55,7 @@ export const parseRecordDeclarationStatement = (parser: Parser): Statement => {
 
       parser.expect(TokenType.Colon);
 
-      propType = parseType(parser, BindingPowerTable.default);
+      propType = parseType(parser, BindingPower.default);
 
       parser.expect(TokenType.EOL);
 

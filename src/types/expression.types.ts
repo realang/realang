@@ -1,8 +1,10 @@
+import { Statement } from "./statement.types";
 import { Token } from "./tokens.types";
 import { Type } from "./types.types";
 
 type ExpressionType =
   | "VariableDeclaration"
+  | "FunctionDeclaration"
   | "RecordConstruction"
   | "VariableAssignment"
   | "Property"
@@ -56,6 +58,13 @@ export interface MemberExpression extends Expression {
   object: Expression;
   property: Expression;
   computed: boolean;
+}
+
+export interface FunctionDeclarationExpr extends Expression {
+  type: "FunctionDeclaration";
+  name: Identifier;
+  params: string[];
+  body: Statement[];
 }
 
 export interface FunctionCallExpression extends Expression {

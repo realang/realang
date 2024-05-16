@@ -4,7 +4,6 @@ import { Type } from "./types.types";
 
 export type StatementType =
   | "Program"
-  | "FunctionDeclaration"
   | "RecordDeclaration"
   | "Block"
   | "Expression"
@@ -29,12 +28,6 @@ export interface BlockStatement extends Statement {
   body: Statement[];
 }
 
-export interface FunctionDeclaration extends Statement {
-  type: "FunctionDeclaration";
-  name: string;
-  params: string[];
-  body: Statement[];
-}
 
 export interface RecordDeclarationStatement extends Statement {
   type: "RecordDeclaration";

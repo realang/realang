@@ -2,7 +2,7 @@ import { Parser } from ".";
 import { TokenType } from "../lib/tokens";
 import { ArrayType, SymbolType, Type } from "../types/types.types";
 import { raise } from "../util";
-import { BindingPower, BindingPowerTable } from "./lookups";
+import { BindingPower, BindingPower } from "./lookups";
 
 export type TypeNudHandler = (parser: Parser) => Type;
 export type TypeLedHandler = (
@@ -47,7 +47,7 @@ export const parseArrayType = (parser: Parser) => {
 
   parser.expect(TokenType.Less);
 
-  const base = parseType(parser, BindingPowerTable.default);
+  const base = parseType(parser, BindingPower.default);
 
   parser.expect(TokenType.Greater);
   const type: ArrayType = {
@@ -72,7 +72,7 @@ export const parseType = (parser: Parser, bp: BindingPower): Type => {
 
   while (
     typeBpLookup.get(parser.currentToken.type) ??
-    BindingPowerTable.default > bp
+    BindingPower.default > bp
   ) {
     const typeLedHandler = typeLedLookup.get(parser.currentToken.type);
 
@@ -86,7 +86,7 @@ export const parseType = (parser: Parser, bp: BindingPower): Type => {
     lhs = typeLedHandler(
       parser,
       lhs,
-      typeBpLookup.get(parser.currentToken.type) ?? BindingPowerTable.default,
+      typeBpLookup.get(parser.currentToken.type) ?? BindingPower.default,
     );
   }
 
