@@ -6,7 +6,7 @@ import {
   Expression,
   ExpressionStatement,
   FunctionCallExpression,
-  FunctionDeclaration,
+  FunctionDeclarationExpr,
   Identifier,
   IfStatement,
   NumericLiteral,
@@ -47,7 +47,7 @@ export default class Compiler {
         return this.transpileObjectLiteral(astNode as ObjectLiteral);
       case "FunctionDeclaration":
         return this.transpileFunctionDeclaration(
-          astNode as FunctionDeclaration
+          astNode as FunctionDeclarationExpr
         );
       case "FunctionCallExpression":
         return this.transpileFunctionCall(astNode as FunctionCallExpression);
@@ -115,16 +115,16 @@ export default class Compiler {
     return `{ ${properties.join(", ")} }`;
   }
 
-  private transpileFunctionDeclaration(func: FunctionDeclaration) {
+  private transpileFunctionDeclaration(func: FunctionDeclarationExpr) {
     const params = func.params.join(", ");
     const body = func.body.map((stmt) => this.transpile(stmt)).join(" ");
-    return `function ${func.name}(${params}) ${body}`;
+    return `function ${func.name.value}(${params}) { ${body} }`;
   }
 
   private transpileFunctionCall(call: FunctionCallExpression) {
     const callee = this.transpile(call.callee);
     const args = call.args.map((arg) => this.transpile(arg)).join(", ");
-    return `${callee}(${args})`;
+    return `${callee}(${args});`;
   }
 
   private transpileBinaryExpression(expression: BinaryExpression) {

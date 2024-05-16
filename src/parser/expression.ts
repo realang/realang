@@ -13,17 +13,20 @@ import {
   VariableDeclarationExpression,
 } from "../types";
 import { Type } from "../types/types.types";
-import { FunctionCallExpression, FunctionDeclarationExpr, Statement, raise } from "../util";
 import {
-  BindingPower,
-  bpLookup,
-  ledLookup,
-  nudLookup,
-} from "./lookups";
+  FunctionCallExpression,
+  FunctionDeclarationExpr,
+  Statement,
+  raise,
+} from "../util";
+import { BindingPower, bpLookup, ledLookup, nudLookup } from "./lookups";
 import { parseStatement } from "./statement";
 import { parseType } from "./types";
 
-export const parseExpression = (parser: Parser, bp: BindingPower): Expression => {
+export const parseExpression = (
+  parser: Parser,
+  bp: BindingPower
+): Expression => {
   const nudHandler = nudLookup.get(parser.currentToken.type);
 
   if (!nudHandler) {
@@ -35,10 +38,7 @@ export const parseExpression = (parser: Parser, bp: BindingPower): Expression =>
 
   let lhs = nudHandler(parser);
 
-  while (
-    bpLookup.get(parser.currentToken.type) ??
-    BindingPower.default > bp
-  ) {
+  while (bpLookup.get(parser.currentToken.type) ?? BindingPower.default > bp) {
     const ledHandler = ledLookup.get(parser.currentToken.type);
 
     if (!ledHandler) {
@@ -62,15 +62,17 @@ export const parseFunctionDeclarationExpr = (parser: Parser): Expression => {
   parser.advance();
 
   const name = parseExpression(parser, BindingPower.default);
-  const params = parseArgs(parser, TokenType.OpenBrace).map((e) => (e as Identifier).value);
+  const params = parseArgs(parser, TokenType.OpenBrace).map(
+    (e) => (e as Identifier).value
+  );
   const body = parseCodeBlock(parser);
 
   const expr: FunctionDeclarationExpr = {
-    type: 'FunctionDeclaration',
+    type: "FunctionDeclaration",
     name: name as Identifier,
     params,
-    body
-  }
+    body,
+  };
   return expr;
 };
 
@@ -85,11 +87,10 @@ export const parseFunctionCallExpr = (parser: Parser): Expression => {
     type: "FunctionCallExpression",
     callee,
     args,
-  }
+  };
 
   return expr;
-}
-
+};
 
 export const parsePrimaryExpression = (parser: Parser): Expression => {
   switch (parser.currentToken.type) {
@@ -282,9 +283,7 @@ export const parseArrayLiteral = (parser: Parser): Expression => {
   return expr;
 };
 
-
-
-export const parseArgs = (parser: Parser, terminalCharType: TokenType) => {
+const parseArgs = (parser: Parser, terminalCharType: TokenType) => {
   const args = [];
 
   while (parser.hasTokens && parser.currentToken.type !== terminalCharType) {
@@ -292,18 +291,21 @@ export const parseArgs = (parser: Parser, terminalCharType: TokenType) => {
   }
 
   return args;
-}
+};
 
-export const parseCodeBlock = (parser: Parser) => {
+const parseCodeBlock = (parser: Parser) => {
   parser.expect(TokenType.OpenBrace);
 
   const body = Array<Statement>();
 
-  while (parser.hasTokens && parser.currentToken.type !== TokenType.CloseBrace) {
+  while (
+    parser.hasTokens &&
+    parser.currentToken.type !== TokenType.CloseBrace
+  ) {
     body.push(parseStatement(parser));
   }
 
   parser.expect(TokenType.CloseBrace);
 
   return body;
-}
+};

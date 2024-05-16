@@ -40,11 +40,7 @@ export const ledLookup = new Map<TokenType, LedHandler>();
 export const nudLookup = new Map<TokenType, NudHandler>();
 export const statementLookup = new Map<TokenType, StatementHandler>();
 
-export const led = (
-  type: TokenType,
-  bp: BindingPower,
-  handler: LedHandler
-) => {
+export const led = (type: TokenType, bp: BindingPower, handler: LedHandler) => {
   bpLookup.set(type, bp);
   ledLookup.set(type, handler);
 };
@@ -77,11 +73,7 @@ export const createLookups = () => {
     BindingPower.assignment,
     parseVariableDeclarationExpression
   );
-  led(
-    TokenType.Assignment,
-    BindingPower.assignment,
-    parseAssignmentExpression
-  );
+  led(TokenType.Assignment, BindingPower.assignment, parseAssignmentExpression);
 
   // -> 3
   led(TokenType.And, BindingPower.logical, parseBinaryExpression);
@@ -92,38 +84,18 @@ export const createLookups = () => {
   // -> 4
   led(TokenType.Equals, BindingPower.relational, parseBinaryExpression);
   led(TokenType.Greater, BindingPower.relational, parseBinaryExpression);
-  led(
-    TokenType.GreaterEquals,
-    BindingPower.relational,
-    parseBinaryExpression
-  );
+  led(TokenType.GreaterEquals, BindingPower.relational, parseBinaryExpression);
   led(TokenType.Less, BindingPower.relational, parseBinaryExpression);
-  led(
-    TokenType.LessEquals,
-    BindingPower.relational,
-    parseBinaryExpression
-  );
+  led(TokenType.LessEquals, BindingPower.relational, parseBinaryExpression);
 
   // -> 5
   led(TokenType.Plus, BindingPower.additive, parseBinaryExpression);
   led(TokenType.Minus, BindingPower.additive, parseBinaryExpression);
 
   // -> 6
-  led(
-    TokenType.Multiply,
-    BindingPower.multiplicative,
-    parseBinaryExpression
-  );
-  led(
-    TokenType.Divide,
-    BindingPower.multiplicative,
-    parseBinaryExpression
-  );
-  led(
-    TokenType.Modular,
-    BindingPower.multiplicative,
-    parseBinaryExpression
-  );
+  led(TokenType.Multiply, BindingPower.multiplicative, parseBinaryExpression);
+  led(TokenType.Divide, BindingPower.multiplicative, parseBinaryExpression);
+  led(TokenType.Modular, BindingPower.multiplicative, parseBinaryExpression);
 
   // -> 8
   // led(TokenType.OpenBrace, BindingPower.call, parseRecordConstruction);

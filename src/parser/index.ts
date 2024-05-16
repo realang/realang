@@ -32,9 +32,7 @@ export class Parser implements IParser {
       body.push(parseStatement(this));
     }
 
-    const blockStatement: BlockStatement = { type: "Block", body };
-
-    return blockStatement;
+    return { type: "Program", body } as Program;
   }
 
   public getTokenAt(n: number): Token {
@@ -78,7 +76,9 @@ export class Parser implements IParser {
     if (tk.type !== type) {
       raise(
         err ??
-        `[Trace: ${this.trace.line}:${this.trace.pos}] Expected ${TokenType[type]}, but received ${TokenType[tk.type]} instead.`,
+          `[Trace: ${this.trace.line}:${this.trace.pos}] Expected ${
+            TokenType[type]
+          }, but received ${TokenType[tk.type]} instead.`
       );
     }
     return this.advance();
