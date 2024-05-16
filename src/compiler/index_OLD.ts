@@ -1,5 +1,8 @@
 import {
   BinaryExpression,
+  BlockStatement,
+  Expression,
+  ExpressionStatement,
   FunctionCallExpression,
   FunctionDeclaration,
   FunctionValue,
@@ -15,24 +18,23 @@ import {
   Program,
   RuntimeValue,
   Statement,
+  Token,
   VariableAssignmentExpression,
-  VariableDeclaration,
+  VariableDeclarationExpression,
 } from "../util";
 import Scope from "./scope";
 
 export default class Interpreter {
-  public eval(astNode: Statement, scope: Scope): RuntimeValue {
+  public eval(astNode: Statement | Expression, scope: Scope): RuntimeValue {
     switch (astNode.type) {
+      case "Block":
+        return this.evalBodyNode(astNode as BlockStatement, scope);
+      case "Expression":
+        return this.eval((astNode as ExpressionStatement).expression, scope);
       case "VariableDeclaration":
         return this.evalVariableDeclaration(
-          astNode as VariableDeclaration,
-          scope,
-        );
-
-      case "VariableAssignmentExpression":
-        return this.evalVariableAssignment(
-          astNode as VariableAssignmentExpression,
-          scope,
+          astNode as VariableDeclarationExpression,
+          scope
         );
 
       case "Identifier":
@@ -50,13 +52,13 @@ export default class Interpreter {
       case "FunctionDeclaration":
         return this.evalFunctionDeclaration(
           astNode as FunctionDeclaration,
-          scope,
+          scope
         );
 
       case "FunctionCallExpression":
         return this.evalFunctionCallExpression(
           astNode as FunctionCallExpression,
-          scope,
+          scope
         );
 
       case "BinaryExpression":
@@ -68,8 +70,8 @@ export default class Interpreter {
       case "IfCondition":
         return this.evalIfStatement(astNode as IfStatement, scope);
 
-      case "Program":
-        return this.evalProgram(astNode as Program, scope);
+      case "Program": 
+        return this.evalBodyNode(astNode as Program, scope);
 
       default:
         console.error("Invalid AST Node", astNode);
@@ -77,7 +79,10 @@ export default class Interpreter {
     }
   }
 
-  private evalProgram(program: Program, scope: Scope): RuntimeValue {
+  private evalBodyNode(
+    program: Program | BlockStatement,
+    scope: Scope
+  ): RuntimeValue {
     let lastEvaluated: RuntimeValue = NULL();
 
     for (const statement of program.body) {
@@ -88,12 +93,12 @@ export default class Interpreter {
   }
 
   private evalIdentifier(identifier: Identifier, scope: Scope): RuntimeValue {
-    return scope.lookupVariable(identifier.symbol);
+    return scope.lookupVariable(identifier.value);
   }
 
   private evalBinaryExpression(
     exp: BinaryExpression,
-    scope: Scope,
+    scope: Scope
   ): RuntimeValue {
     const lhs = this.eval(exp.lhs, scope);
     const rhs = this.eval(exp.rhs, scope);
@@ -103,14 +108,14 @@ export default class Interpreter {
     return this.evalNumericBinaryExpression(
       lhs as NumberValue,
       rhs as NumberValue,
-      exp.operator,
+      exp.operator
     );
   }
 
   private evalNumericBinaryExpression(
     lhs: NumberValue,
     rhs: NumberValue,
-    operator: string,
+    { value: operator }: Token
   ): NumberValue {
     let res = 0;
 
@@ -132,27 +137,28 @@ export default class Interpreter {
   }
 
   private evalVariableDeclaration(
-    arg0: VariableDeclaration,
-    scope: Scope,
+    arg0: VariableDeclarationExpression,
+    scope: Scope
   ): RuntimeValue {
     const value = arg0.value ? this.eval(arg0.value, scope) : NULL();
-    return scope.declareVariable(arg0.identifier, value, arg0.isConstant);
+    console.log(...arguments);
+    return scope.declareVariable(arg0.identifier.value, value, arg0.isConstant);
   }
 
   private evalVariableAssignment(
     node: VariableAssignmentExpression,
-    scope: Scope,
+    scope: Scope
   ): RuntimeValue {
     if (node.assignee.type !== "Identifier") {
       console.error(
-        `Expected an identifier for re-assignment. Instead got ${node.assignee.type}`,
+        `Expected an identifier for re-assignment. Instead got ${node.assignee.type}`
       );
       process.exit(1);
     }
 
     return scope.assignVariable(
-      (node.assignee as Identifier).symbol,
-      this.eval(node.value, scope),
+      (node.assignee as Identifier).value,
+      this.eval(node.value, scope)
     );
   }
 
@@ -162,7 +168,7 @@ export default class Interpreter {
       properties: new Map<string, RuntimeValue>(),
     };
 
-    for (const { key, value } of obj.properties) {
+    for (const { key, value } of obj.value) {
       const runtimeValue = value
         ? this.eval(value, scope)
         : scope.lookupVariable(key);
@@ -174,7 +180,7 @@ export default class Interpreter {
 
   private evalFunctionDeclaration(
     decStmt: FunctionDeclaration,
-    scope: Scope,
+    scope: Scope
   ): RuntimeValue {
     const { name, params, body } = decStmt;
     const fn: FunctionValue = {
@@ -190,7 +196,7 @@ export default class Interpreter {
 
   private evalFunctionCallExpression(
     exp: FunctionCallExpression,
-    scope: Scope,
+    scope: Scope
   ): RuntimeValue {
     const args = exp.args.map((arg) => this.eval(arg, scope));
     const fn = this.eval(exp.callee, scope);
@@ -215,14 +221,14 @@ export default class Interpreter {
       return res;
     }
     console.error(
-      `Attempt to call a non-function value: ${JSON.stringify(fn)}`,
+      `Attempt to call a non-function value: ${JSON.stringify(fn)}`
     );
     process.exit(1);
   }
 
   private evalPrintExpression(
     exp: PrintExpression,
-    scope: Scope,
+    scope: Scope
   ): RuntimeValue {
     const args = exp.args
       .map((arg) => this.eval(arg, scope))

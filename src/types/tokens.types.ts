@@ -1,6 +1,4 @@
-import { TokenTypes } from "../lib/tokens";
-
-export type TokenType = (typeof TokenTypes)[keyof typeof TokenTypes];
+import type { TokenType } from "../lib/tokens";
 
 export type Token = {
   type: TokenType;

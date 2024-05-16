@@ -1,3 +1,4 @@
+import { TokenType } from "../lib/tokens";
 import { Token } from "../types";
 import { raise } from "../util";
 import { LexerPattern, patterns as lexerPatterns } from "./patterns";
@@ -36,7 +37,7 @@ export class Lexer implements ILexer {
     };
   }
 
-  public tokenize(): Array<Token> {
+  public tokenize(): Token[] {
     while (!this.eof()) {
       let realToken = false;
 
@@ -56,7 +57,7 @@ export class Lexer implements ILexer {
         );
     }
 
-    this.tokens.push({ type: "EOF", value: "EOF" });
+    this.tokens.push({ type: TokenType.EOF, value: "EOF" });
     return this.tokens;
   }
 

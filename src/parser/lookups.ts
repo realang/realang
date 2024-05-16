@@ -1,9 +1,11 @@
 import { Parser } from ".";
-import { Expression, Statement, TokenType } from "../types";
+import { Expression, Identifier, Statement } from "../types";
+import { TokenType } from "../lib/tokens";
 import {
   parseArrayLiteral,
   parseAssignmentExpression,
   parseBinaryExpression,
+  parseFunctionExpression,
   parsePrefixExpression,
   parsePrimaryExpression,
   parseRecordConstruction,
@@ -11,37 +13,38 @@ import {
 } from "./expression";
 import { parseRecordDeclarationStatement } from "./statement";
 
-export const BindingPowerTable = {
-  default: 0,
-  comma: 1,
-  assignment: 2,
-  logical: 3,
-  relational: 4,
-  additive: 5,
-  multiplicative: 6,
-  unary: 7,
-  call: 8,
-  member: 9,
-  primary: 10,
-} as const;
-
-export type BindingPower =
-  (typeof BindingPowerTable)[keyof typeof BindingPowerTable];
+export const enum BindingPowerTable {
+  default,
+  comma,
+  assignment,
+  logical,
+  relational,
+  additive,
+  multiplicative,
+  unary,
+  call,
+  member,
+  primary,
+}
 
 export type StatementHandler = (parser: Parser) => Statement;
 export type NudHandler = (parser: Parser) => Expression;
 export type LedHandler = (
   parser: Parser,
   lhs: Expression,
-  bp: BindingPower,
+  bp: BindingPowerTable
 ) => Expression;
 
-export const bpLookup = new Map<TokenType, BindingPower>();
+export const bpLookup = new Map<TokenType, BindingPowerTable>();
 export const ledLookup = new Map<TokenType, LedHandler>();
 export const nudLookup = new Map<TokenType, NudHandler>();
 export const statementLookup = new Map<TokenType, StatementHandler>();
 
-export const led = (type: TokenType, bp: BindingPower, handler: LedHandler) => {
+export const led = (
+  type: TokenType,
+  bp: BindingPowerTable,
+  handler: LedHandler
+) => {
   bpLookup.set(type, bp);
   ledLookup.set(type, handler);
 };
@@ -57,47 +60,77 @@ export const statement = (type: TokenType, handler: StatementHandler) => {
 
 export const createLookups = () => {
   // ---> STATEMENTS <---
-  statement("Record", parseRecordDeclarationStatement);
+  statement(TokenType.Record, parseRecordDeclarationStatement);
 
   // --> LED & NUD <--
 
   // -> 2
   led(
-    "Const",
+    TokenType.Const,
     BindingPowerTable.assignment,
-    parseVariableDeclarationExpression,
+    parseVariableDeclarationExpression
   );
-  led("Let", BindingPowerTable.assignment, parseVariableDeclarationExpression);
-  led("Assignment", BindingPowerTable.assignment, parseAssignmentExpression);
+  led(
+    TokenType.Let,
+    BindingPowerTable.assignment,
+    parseVariableDeclarationExpression
+  );
+  led(
+    TokenType.Assignment,
+    BindingPowerTable.assignment,
+    parseAssignmentExpression
+  );
+  nud(TokenType.Function, parseFunctionExpression);
 
   // -> 3
-
-  led("And", BindingPowerTable.logical, parseBinaryExpression);
-  led("Or", BindingPowerTable.logical, parseBinaryExpression);
+  led(TokenType.And, BindingPowerTable.logical, parseBinaryExpression);
+  led(TokenType.Or, BindingPowerTable.logical, parseBinaryExpression);
+  led(TokenType.Not, BindingPowerTable.unary, parsePrefixExpression);
+  // led(TokenType.Comma, BindingPowerTable.comma, () => {});
 
   // -> 4
-  led("Equals", BindingPowerTable.relational, parseBinaryExpression);
-  led("Greater", BindingPowerTable.relational, parseBinaryExpression);
-  led("GreaterEquals", BindingPowerTable.relational, parseBinaryExpression);
-  led("Less", BindingPowerTable.relational, parseBinaryExpression);
-  led("LessEquals", BindingPowerTable.relational, parseBinaryExpression);
+  led(TokenType.Equals, BindingPowerTable.relational, parseBinaryExpression);
+  led(TokenType.Greater, BindingPowerTable.relational, parseBinaryExpression);
+  led(
+    TokenType.GreaterEquals,
+    BindingPowerTable.relational,
+    parseBinaryExpression
+  );
+  led(TokenType.Less, BindingPowerTable.relational, parseBinaryExpression);
+  led(
+    TokenType.LessEquals,
+    BindingPowerTable.relational,
+    parseBinaryExpression
+  );
 
   // -> 5
-  led("Plus", BindingPowerTable.additive, parseBinaryExpression);
-  led("Minus", BindingPowerTable.additive, parseBinaryExpression);
+  led(TokenType.Plus, BindingPowerTable.additive, parseBinaryExpression);
+  led(TokenType.Minus, BindingPowerTable.additive, parseBinaryExpression);
 
   // -> 6
-  led("Multiply", BindingPowerTable.multiplicative, parseBinaryExpression);
-  led("Divide", BindingPowerTable.multiplicative, parseBinaryExpression);
-  led("Modular", BindingPowerTable.multiplicative, parseBinaryExpression);
+  led(
+    TokenType.Multiply,
+    BindingPowerTable.multiplicative,
+    parseBinaryExpression
+  );
+  led(
+    TokenType.Divide,
+    BindingPowerTable.multiplicative,
+    parseBinaryExpression
+  );
+  led(
+    TokenType.Modular,
+    BindingPowerTable.multiplicative,
+    parseBinaryExpression
+  );
 
   // -> 8
-  led("OpenBrace", BindingPowerTable.call, parseRecordConstruction);
+  led(TokenType.OpenBrace, BindingPowerTable.call, parseRecordConstruction);
 
   // -> 10
-  nud("Number", parsePrimaryExpression);
-  nud("String", parsePrimaryExpression);
-  nud("Identifier", parsePrimaryExpression);
-  nud("OpenBracket", parseArrayLiteral);
-  nud("Minus", parsePrefixExpression);
+  nud(TokenType.Number, parsePrimaryExpression);
+  nud(TokenType.String, parsePrimaryExpression);
+  nud(TokenType.Identifier, parsePrimaryExpression);
+  nud(TokenType.OpenBracket, parseArrayLiteral);
+  nud(TokenType.Minus, parsePrefixExpression);
 };

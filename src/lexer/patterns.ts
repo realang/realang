@@ -1,10 +1,11 @@
 import { Lexer } from ".";
+import { TokenType } from "../lib/tokens";
 import {
   handleComment,
   handleDefault,
   handleNumber,
   handleString,
-  handleSymbol,
+  handleKeyword,
   handleWhitespace,
 } from "./handlers";
 
@@ -25,7 +26,7 @@ export const patterns: LexerPattern[] = [
       const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
       lex.tokens.push({
-        type: "Let",
+        type: TokenType.Let,
         value,
       });
 
@@ -40,7 +41,7 @@ export const patterns: LexerPattern[] = [
       const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
       lex.tokens.push({
-        type: "Assignment",
+        type: TokenType.Assignment,
         value,
       });
 
@@ -55,7 +56,7 @@ export const patterns: LexerPattern[] = [
       const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
       lex.tokens.push({
-        type: "ExplicitType",
+        type: TokenType.ExplicitType,
         value,
       });
 
@@ -70,7 +71,7 @@ export const patterns: LexerPattern[] = [
       const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
       lex.tokens.push({
-        type: "Print",
+        type: TokenType.Print,
         value,
       });
 
@@ -79,30 +80,31 @@ export const patterns: LexerPattern[] = [
   },
 
   { regex: /[0-9]+(\.[0-9]+)?/, handler: handleNumber },
-  { regex: /[a-zA-Z_][a-zA-Z0-9_]*/, handler: handleSymbol },
-  { regex: /"[^"]*"/, handler: handleString },
+  { regex: /[a-zA-Z_][a-zA-Z0-9_]*/, handler: handleKeyword },
+  { regex: /("[^"]*"|'[^']*')/, handler: handleString },
   { regex: /\s+/, handler: handleWhitespace },
 
-  { regex: /\./, handler: handleDefault("Dot", ".") },
-  { regex: /,/, handler: handleDefault("Comma", ",") },
-  { regex: /:/, handler: handleDefault("Colon", ":") },
+  { regex: /\./, handler: handleDefault(TokenType.Dot, ".") },
+  { regex: /,/, handler: handleDefault(TokenType.Comma, ",") },
+  // { regex: /,/, handler: () => {} },
+  { regex: /:/, handler: handleDefault(TokenType.Colon, ":") },
 
-  { regex: /"/, handler: handleDefault("Quotation", '"') },
-  { regex: /'/, handler: handleDefault("Quotation", "'") },
+  { regex: /"/, handler: handleDefault(TokenType.Quotation, '"') },
+  { regex: /'/, handler: handleDefault(TokenType.Quotation, "'") },
 
-  { regex: /\(/, handler: handleDefault("OpenParenthesis", "(") },
-  { regex: /\)/, handler: handleDefault("CloseParenthesis", ")") },
-  { regex: /{/, handler: handleDefault("OpenBrace", "{") },
-  { regex: /}/, handler: handleDefault("CloseBrace", "}") },
-  { regex: /\[/, handler: handleDefault("OpenBracket", "[") },
-  { regex: /\]/, handler: handleDefault("CloseBracket", "]") },
+  { regex: /\(/, handler: handleDefault(TokenType.OpenParenthesis, "(") },
+  { regex: /\)/, handler: handleDefault(TokenType.CloseParenthesis, ")") },
+  { regex: /{/, handler: handleDefault(TokenType.OpenBrace, "{") },
+  { regex: /}/, handler: handleDefault(TokenType.CloseBrace, "}") },
+  { regex: /\[/, handler: handleDefault(TokenType.OpenBracket, "[") },
+  { regex: /\]/, handler: handleDefault(TokenType.CloseBracket, "]") },
 
-  { regex: /\+/, handler: handleDefault("Plus", "+") },
-  { regex: /-/, handler: handleDefault("Minus", "-") },
-  { regex: /\*/, handler: handleDefault("Multiply", "*") },
-  { regex: /\//, handler: handleDefault("Divide", "/") },
-  { regex: /%/, handler: handleDefault("Modular", "%") },
+  { regex: /\+/, handler: handleDefault(TokenType.Plus, "+") },
+  { regex: /-/, handler: handleDefault(TokenType.Minus, "-") },
+  { regex: /\*/, handler: handleDefault(TokenType.Multiply, "*") },
+  { regex: /\//, handler: handleDefault(TokenType.Divide, "/") },
+  { regex: /%/, handler: handleDefault(TokenType.Modular, "%") },
 
-  { regex: /</, handler: handleDefault("Less", "<") },
-  { regex: />/, handler: handleDefault("Greater", ">") },
+  { regex: /</, handler: handleDefault(TokenType.Less, "<") },
+  { regex: />/, handler: handleDefault(TokenType.Greater, ">") },
 ];

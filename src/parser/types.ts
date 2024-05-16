@@ -1,5 +1,5 @@
 import { Parser } from ".";
-import { TokenType } from "../types";
+import { TokenType } from "../lib/tokens";
 import { ArrayType, SymbolType, Type } from "../types/types.types";
 import { raise } from "../util";
 import { BindingPower, BindingPowerTable } from "./lookups";
@@ -29,14 +29,14 @@ export const typeNud = (type: TokenType, handler: TypeNudHandler) => {
 };
 
 export const createTypeLookups = () => {
-  typeNud("Identifier", parseSymbolType);
-  typeNud("ArrayType", parseArrayType);
+  typeNud(TokenType.Identifier, parseSymbolType);
+  typeNud(TokenType.ArrayType, parseArrayType);
 };
 
 export const parseSymbolType = (parser: Parser) => {
   const type: SymbolType = {
     type: "Symbol",
-    name: parser.expect("Identifier").value,
+    name: parser.expect(TokenType.Identifier).value,
   };
 
   return type;
@@ -45,11 +45,11 @@ export const parseSymbolType = (parser: Parser) => {
 export const parseArrayType = (parser: Parser) => {
   parser.advance();
 
-  parser.expect("Less");
+  parser.expect(TokenType.Less);
 
   const base = parseType(parser, BindingPowerTable.default);
 
-  parser.expect("Greater");
+  parser.expect(TokenType.Greater);
   const type: ArrayType = {
     type: "Array",
     base,

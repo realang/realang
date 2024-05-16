@@ -1,4 +1,4 @@
-import Scope from "../interpreter/scope";
+import Scope from "../compiler/scope";
 import { Expression } from "./expression.types";
 import { Statement } from "./statement.types";
 

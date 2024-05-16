@@ -1,6 +1,7 @@
 import { Trace } from "../lexer";
-import { BlockStatement, Statement, Token, TokenType } from "../types";
-import { raise } from "../util";
+import { TokenType } from "../lib/tokens";
+import { Statement, Token } from "../types";
+import { Program, raise } from "../util";
 import { createLookups } from "./lookups";
 import { parseStatement } from "./statement";
 import { createTypeLookups } from "./types";
@@ -31,7 +32,7 @@ export class Parser implements IParser {
       body.push(parseStatement(this));
     }
 
-    const blockStatement: BlockStatement = { type: "Block", body };
+    const blockStatement: Program = { type: "Program", body };
 
     return blockStatement;
   }
@@ -54,7 +55,8 @@ export class Parser implements IParser {
 
   public get hasTokens(): boolean {
     return (
-      this.trace.pos < this.tokens.length && this.currentToken.type !== "EOF"
+      this.trace.pos < this.tokens.length &&
+      this.currentToken.type !== TokenType.EOF
     );
   }
 
@@ -76,7 +78,7 @@ export class Parser implements IParser {
     if (tk.type !== type) {
       raise(
         err ??
-          `[Trace: ${this.trace.line}:${this.trace.pos}] Expected ${type}, but received ${tk.type} instead.`,
+          `[Trace: ${this.trace.line}:${this.trace.pos}] Expected ${TokenType[type]}, but received ${TokenType[tk.type]} instead.`,
       );
     }
     return this.advance();

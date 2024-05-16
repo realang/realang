@@ -5,7 +5,6 @@
 </p>
 
 ## Installation
-TBR (R for written lol)
 
 ## Context
 

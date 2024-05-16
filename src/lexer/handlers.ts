@@ -1,6 +1,5 @@
 import { Lexer } from ".";
-import { Keywords } from "../lib/tokens";
-import { TokenType } from "../types";
+import { Keywords, TokenType } from "../lib/tokens";
 
 export const handleDefault = (type: TokenType, value: string) => {
   const func = (lex: Lexer) => {
@@ -24,21 +23,21 @@ export const handleNumber = (lex: Lexer, regex: RegExp) => {
 
   if (!value) return;
 
-  lex.tokens.push({ type: "Number", value });
+  lex.tokens.push({ type: TokenType.Number, value });
   lex.advancePos(value?.length);
 };
 
-export const handleSymbol = (lex: Lexer, regex: RegExp) => {
+export const handleKeyword = (lex: Lexer, regex: RegExp) => {
   const match = regex.exec(lex.srcAfterPos());
   const value = lex.srcAfterPos().slice(match?.index, match?.at(0)?.length);
 
   if (Object.keys(Keywords).includes(value)) {
     lex.tokens.push({
-      type: Keywords[value as keyof typeof Keywords] as TokenType,
+      type: Keywords[value as keyof typeof Keywords],
       value,
     });
   } else {
-    lex.tokens.push({ type: "Identifier", value });
+    lex.tokens.push({ type: TokenType.Identifier, value });
   }
 
   lex.advancePos(value.length);
@@ -50,7 +49,7 @@ export const handleString = (lex: Lexer, regex: RegExp) => {
     .srcAfterPos()
     .slice(match?.index! + 1, match?.at(0)?.length! - 1);
 
-  lex.tokens.push({ type: "String", value });
+  lex.tokens.push({ type: TokenType.String, value });
   lex.advancePos(value.length + 2);
 };
 

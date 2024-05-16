@@ -1,5 +1,5 @@
-import { BindOptions } from "dgram";
 import { Parser } from ".";
+import { TokenType } from "../lib/tokens";
 import {
   ArrayLiteral,
   BinaryExpression,
@@ -22,17 +22,13 @@ import {
   nudLookup,
 } from "./lookups";
 import { parseType } from "./types";
-import { warn } from "console";
 
-export const parseExpression = (
-  parser: Parser,
-  bp: BindingPower,
-): Expression => {
+const parseExpression = (parser: Parser, bp: BindingPower): Expression => {
   const nudHandler = nudLookup.get(parser.currentToken.type);
 
   if (!nudHandler) {
     raise(
-      `:: Internal Error -> No handler found for NUD expression: ${parser.currentToken.value} [${parser.currentToken.type}]`,
+      `:: Internal Error -> No handler found for NUD expression: ${parser.currentToken.value} [${parser.currentToken.type}]`
     );
     return {} as Expression; // ! Unreachable
   }
@@ -47,7 +43,7 @@ export const parseExpression = (
 
     if (!ledHandler) {
       raise(
-        `:: Internal Error -> No handler found for LED expression: ${parser.advance()}`,
+        `:: Internal Error -> No handler found for LED expression: ${parser.advance()}`
       );
       return {} as Expression; // ! Unreachable
     }
@@ -55,16 +51,21 @@ export const parseExpression = (
     lhs = ledHandler(
       parser,
       lhs,
-      bpLookup.get(parser.currentToken.type) ?? BindingPowerTable.default,
+      bpLookup.get(parser.currentToken.type) ?? BindingPowerTable.default
     );
   }
 
   return lhs;
 };
 
+export const parseFunctionExpression = (parser: Parser): Expression => {
+  // TODO
+  return {} as Expression;
+};
+
 export const parsePrimaryExpression = (parser: Parser): Expression => {
   switch (parser.currentToken.type) {
-    case "Number": {
+    case TokenType.Number: {
       const num = parseFloat(parser.advance().value);
       const expr: NumericLiteral = {
         type: "NumericLiteral",
@@ -74,7 +75,7 @@ export const parsePrimaryExpression = (parser: Parser): Expression => {
       return expr;
     }
 
-    case "String": {
+    case TokenType.String: {
       const expr: StringLiteral = {
         type: "StringLiteral",
         value: parser.advance().value,
@@ -82,7 +83,7 @@ export const parsePrimaryExpression = (parser: Parser): Expression => {
       return expr;
     }
 
-    case "Identifier": {
+    case TokenType.Identifier: {
       const expr: Identifier = {
         type: "Identifier",
         value: parser.advance().value,
@@ -92,7 +93,7 @@ export const parsePrimaryExpression = (parser: Parser): Expression => {
 
     default:
       raise(
-        `:: Internal Error -> Unknown type for primary expression: ${parser.advance()}`,
+        `:: Internal Error -> Unknown type for primary expression: ${parser.advance()}`
       );
       return {} as Expression; // ! This line won't be reached
   }
@@ -101,7 +102,7 @@ export const parsePrimaryExpression = (parser: Parser): Expression => {
 export const parseBinaryExpression = (
   parser: Parser,
   lhs: Expression,
-  bp: BindingPower,
+  bp: BindingPower
 ): Expression => {
   const operator = parser.advance();
 
@@ -133,19 +134,19 @@ export const parsePrefixExpression = (parser: Parser): Expression => {
 export const parseVariableDeclarationExpression = (
   parser: Parser,
   lhs: Expression,
-  bp: BindingPower,
+  bp: BindingPower
 ): Expression => {
   let explicitType: Type | undefined = undefined;
   let value: Expression | undefined = undefined;
-  const isConstant = parser.currentToken.type === "Const";
+  const isConstant = parser.currentToken.type === TokenType.Const;
 
   parser.advance();
 
-  if (parser.currentToken.type !== "ExplicitType") {
+  if (parser.currentToken.type !== TokenType.ExplicitType) {
     value = parseExpression(parser, bp);
   }
 
-  if (parser.currentToken.type === "ExplicitType") {
+  if (parser.currentToken.type === TokenType.ExplicitType) {
     parser.advance();
     explicitType = parseType(parser, BindingPowerTable.default);
   }
@@ -156,7 +157,7 @@ export const parseVariableDeclarationExpression = (
 
   const expr: VariableDeclarationExpression = {
     type: "VariableDeclaration",
-    identifier: lhs,
+    identifier: lhs as Identifier,
     value,
     explicitType,
     isConstant,
@@ -168,14 +169,14 @@ export const parseVariableDeclarationExpression = (
 export const parseAssignmentExpression = (
   parser: Parser,
   lhs: Expression,
-  bp: BindingPower,
+  bp: BindingPower
 ): Expression => {
   parser.advance();
   const rhs = parseExpression(parser, bp);
 
   const expr: VariableAssignmentExpression = {
     type: "VariableAssignment",
-    assignee: lhs,
+    assignee: lhs as Identifier,
     value: rhs,
   };
 
@@ -187,7 +188,7 @@ export const parseGroupingExpression = (parser: Parser) => {
 
   const expr = parseExpression(parser, BindingPowerTable.default);
 
-  parser.expect("CloseParenthesis");
+  parser.expect(TokenType.CloseParenthesis);
 
   return expr;
 };
@@ -195,23 +196,26 @@ export const parseGroupingExpression = (parser: Parser) => {
 export const parseRecordConstruction = (
   parser: Parser,
   lhs: Expression,
-  bp: BindingPower,
+  bp: BindingPower
 ): Expression => {
   if (!("value" in lhs) || typeof lhs.value !== "string")
     return {} as Expression;
   const name = lhs.value;
   const properties: RecordConstructionExpression["properties"] = new Map();
 
-  parser.expect("OpenBrace");
+  parser.expect(TokenType.OpenBrace);
 
-  while (parser.hasTokens && parser.currentToken.type !== "CloseBrace") {
-    const propName = parser.expect("Identifier").value;
-    parser.expect("Colon");
+  while (
+    parser.hasTokens &&
+    parser.currentToken.type !== TokenType.CloseBrace
+  ) {
+    const propName = parser.expect(TokenType.Identifier).value;
+    parser.expect(TokenType.Colon);
     const propValue = parseExpression(parser, BindingPowerTable.assignment);
     properties.set(propName, propValue);
   }
 
-  parser.expect("CloseBrace");
+  parser.expect(TokenType.CloseBrace);
 
   const expr: RecordConstructionExpression = {
     type: "RecordConstruction",
@@ -223,21 +227,24 @@ export const parseRecordConstruction = (
 };
 
 export const parseArrayLiteral = (parser: Parser): Expression => {
-  parser.expect("OpenBracket");
+  parser.expect(TokenType.OpenBracket);
 
   const value = Array<Expression>();
 
-  while (parser.hasTokens && parser.currentToken.type !== "CloseBracket") {
+  while (
+    parser.hasTokens &&
+    parser.currentToken.type !== TokenType.CloseBracket
+  ) {
     const prop = parseExpression(parser, BindingPowerTable.assignment);
     value.push(prop);
 
-    // @ts-ignore
-    if (parser.currentToken.type !== "CloseBracket") {
-      parser.expect("Comma");
+    // @ts-expect-error
+    if (parser.currentToken.type !== TokenType.CloseBracket) {
+      parser.expect(TokenType.Comma);
     }
   }
 
-  parser.expect("CloseBracket");
+  parser.expect(TokenType.CloseBracket);
 
   const expr: ArrayLiteral = {
     type: "ArrayLiteral",

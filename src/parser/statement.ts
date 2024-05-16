@@ -1,4 +1,5 @@
 import { Parser } from ".";
+import { TokenType } from "../lib/tokens";
 import {
   ExpressionStatement,
   RecordDeclarationStatement,
@@ -23,7 +24,7 @@ export const parseStatement = (parser: Parser): Statement => {
 export const parseExpressionStatement = (parser: Parser): Statement => {
   const expr = parseExpression(parser, BindingPowerTable.default);
 
-  parser.expect("EOL");
+  parser.expect(TokenType.EOL);
 
   const statement: ExpressionStatement = {
     type: "Expression",
@@ -34,26 +35,29 @@ export const parseExpressionStatement = (parser: Parser): Statement => {
 };
 
 export const parseRecordDeclarationStatement = (parser: Parser): Statement => {
-  parser.expect("Record");
+  parser.expect(TokenType.Record);
 
-  const name = parser.expect("Identifier");
+  const name = parser.expect(TokenType.Identifier);
 
-  parser.expect("OpenBrace");
+  parser.expect(TokenType.OpenBrace);
 
   const properties: RecordDeclarationStatement["properties"] = new Map();
 
-  while (parser.hasTokens && parser.currentToken.type !== "CloseBrace") {
+  while (
+    parser.hasTokens &&
+    parser.currentToken.type !== TokenType.CloseBrace
+  ) {
     let propName: string | null = null;
     let propType: Type | null = null;
 
-    if (parser.currentToken.type === "Identifier") {
-      propName = parser.expect("Identifier").value;
+    if (parser.currentToken.type === TokenType.Identifier) {
+      propName = parser.expect(TokenType.Identifier).value;
 
-      parser.expect("Colon");
+      parser.expect(TokenType.Colon);
 
       propType = parseType(parser, BindingPowerTable.default);
 
-      parser.expect("EOL");
+      parser.expect(TokenType.EOL);
 
       if (properties.has(propName)) {
         raise(
@@ -65,7 +69,7 @@ export const parseRecordDeclarationStatement = (parser: Parser): Statement => {
     }
   }
 
-  parser.expect("CloseBrace");
+  parser.expect(TokenType.CloseBrace);
 
   const statement: RecordDeclarationStatement = {
     type: "RecordDeclaration",

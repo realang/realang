@@ -45,7 +45,7 @@ export interface RecordDeclarationStatement extends Statement {
 
 export interface IfStatement extends Statement {
   type: "IfCondition";
-  condition?: Expression;
+  condition: Expression;
   body: Statement[];
   orElse?: IfStatement;
 }

@@ -66,7 +66,7 @@ export interface FunctionCallExpression extends Expression {
 
 export interface VariableDeclarationExpression extends Expression {
   type: "VariableDeclaration";
-  identifier: Expression;
+  identifier: Identifier;
   value?: Expression;
   explicitType?: Type;
   isConstant: boolean;
@@ -74,7 +74,7 @@ export interface VariableDeclarationExpression extends Expression {
 
 export interface VariableAssignmentExpression extends Expression {
   type: "VariableAssignment";
-  assignee: Expression;
+  assignee: Identifier;
   value: Expression;
 }
 
@@ -97,7 +97,7 @@ export interface Identifier extends Expression {
 export interface Property extends Expression {
   type: "Property";
   key: string;
-  value?: Expression;
+  value: Expression;
 }
 
 export interface PrefixExpression extends Expression {

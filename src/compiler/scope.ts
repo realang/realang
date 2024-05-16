@@ -21,7 +21,8 @@ export default class Scope {
   }
 
   public lookupVariable(name: string): RuntimeValue {
-    return this.resolve(name).variables.get(name) as RuntimeValue;
+    console.log(this.variables);
+    return this.resolve(name).variables.get(name)!;
   }
 
   public declareVariable(
@@ -29,6 +30,7 @@ export default class Scope {
     value: RuntimeValue,
     isConstant: boolean,
   ): RuntimeValue {
+    console.log(name, value, isConstant);
     if (this.variables.has(name)) {
       console.error(`'${name}' is already defined!`);
       process.exit(1);
